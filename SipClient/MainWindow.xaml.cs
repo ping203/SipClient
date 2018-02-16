@@ -5,6 +5,11 @@ using System.Windows;
 using Ozeki.VoIP;
 using System.ComponentModel;
 using Ozeki.Media;
+using System.Windows.Controls;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
+using System.Text.RegularExpressions;
+using System.Windows.Input;
 
 namespace SipClient
 {
@@ -13,20 +18,81 @@ namespace SipClient
     /// </summary>
     public partial class MainWindow : Window
     {
-        // add log system
-        private StringBuilder LogMessages = new StringBuilder(100);
-
         private static Softphone _softphone; // softphone object
+        private static StringBuilder numberToDial = new StringBuilder(13);
+        private bool callEndedFlag; 
+
 
         public MainWindow()
         {
             // Initialize all controls
             InitializeComponent();
 
+            InitializeControlEvents();
+
             // Initialize sofphone components
             InitSoftphone();
 
-            ReadRegisterInfos();
+            //ReadRegisterInfos();
+        }
+
+        // Создание событий для кнопок и т.д
+        private void InitializeControlEvents()
+        {
+            // set button with number click event
+            btnAction0.Click += btnActionClick;
+            btnAction1.Click += btnActionClick;
+            btnAction2.Click += btnActionClick;
+            btnAction3.Click += btnActionClick;
+            btnAction4.Click += btnActionClick;
+            btnAction5.Click += btnActionClick;
+            btnAction6.Click += btnActionClick;
+            btnAction7.Click += btnActionClick;
+            btnAction8.Click += btnActionClick;
+            btnAction9.Click += btnActionClick;
+            // set asterisk and cell button event
+            btnActionAsterisk.Click += btnActionClick;
+            btnActionCell.Click += btnActionClick;
+
+            //TextBoxEvents
+            txtPhoneNumber.TextChanged += new TextChangedEventHandler(txtPhoneNumber_TextChanged);
+            txtPhoneNumber.MouseLeftButtonDown += new MouseButtonEventHandler(txtPhoneNumber_MouseLeftButtonDown);
+        }
+
+        // Click on the phone board buttons
+        private void btnActionClick(object sender, EventArgs e)
+        {
+            // add to phone number collection
+            numberToDial.Append((sender as Button).Content);
+            txtPhoneNumber.Text = numberToDial.ToString();
+        }
+
+        // Нажатие на кнопку соединить\ разъединить
+        private void btnConnectOrReject_Click(object sender, RoutedEventArgs e)
+        {
+            // Check phone number 
+            if(!IsPhoneNumber(numberToDial.ToString())){
+                MessageBox.Show(string.Concat("Неправильный телефонный номер : '", numberToDial, "'!"));
+                return;
+            }
+
+            // make a call to number
+            MakeCall(numberToDial);
+        }
+
+        private void MakeCall(StringBuilder numberToDial)
+        {
+            //Clear numberToDial
+            string callNumber = numberToDial.ToString();
+            numberToDial.Clear();
+
+            _softphone.StartCall(callNumber);
+        }
+
+        // Check number
+        public static bool IsPhoneNumber(string number)
+        {
+            return Regex.Match(number, @"^(\+[0-9]{9})$").Success;
         }
 
         /// <summary>
@@ -36,7 +102,11 @@ namespace SipClient
         private void InitSoftphone()
         {
             _softphone = new Softphone();
-            // add event handlers
+            
+            //Register phone
+            Register();
+
+            // Event handlers
             _softphone.PhoneLineStateChanged += _softphone_RegStateChanged;  // соединение с asterisk
             _softphone.CallStateChanged += _softphone_CallStateChanged;     // статус соединения с клиентом
         }
@@ -46,12 +116,14 @@ namespace SipClient
         /// </summary>
         private void _softphone_CallStateChanged(object sender, CallStateChangedArgs e)
         {
-            Console.WriteLine("Call state changed: {0}", e.State);
-
-            if (e.State.IsCallEnded())
+#warning CallStateChangeNotificate
+            // вывод состояни звонка
+            if (e.State == CallState.Completed)
             {
-                StartToDial();
+                txtPhoneNumber.Text = String.Empty;
             }
+            // установка флага свободной линии
+            callEndedFlag = e.State.IsCallEnded();
         }
 
         /// <summary>
@@ -59,166 +131,68 @@ namespace SipClient
         /// </summary>
         private void _softphone_RegStateChanged(object sender, RegistrationStateChangedArgs e)
         {
-            AddToLogMessage(string.Format("Phone line state changed: {0}", e.State));
-
             if (e.State == RegState.Error || e.State == RegState.NotRegistered)
             {
-                ReadRegisterInfos();
+                //set unavailable icon and text message
+                var source = new Uri("/SipClient;component/Resources/inactive.png", UriKind.Relative);
+                this.StatusIcon.Source = new BitmapImage(source);
+                textStatus.Text = "Нет подключения!";
             }
-            else if (e.State == RegState.RegistrationSucceeded)
+            else if (e.State == RegState.RegistrationSucceeded) // Online!
             {
-                AddToLogMessage("Registration succeeded - ONLINE");
-                StartExample();
-                StartToDial();
+                //set available icon and text message
+                var source = new Uri("/SipClient;component/Resources/active.png", UriKind.Relative);
+                this.StatusIcon.Source = new BitmapImage(source);
+                textStatus.Text = "На линии!";
             }
         }
 
-        private void AddToLogMessage(string text)
+        private void Register()
         {
-            LogMessages.Append(string.Concat(text, Environment.NewLine));
+            // When every information has been given, we are trying to register to the PBX with the softphone's Register() method.
+            var registrationRequired = true;
+            var displayName = "test";
+            var userName = "test";
+            var authenticationId = "test";
+            var registerPassword = "testpass";
+            var domainHost = "192.168.0.5";
+            var domainPort = 5060;
+
+            _softphone.Register(registrationRequired, displayName, userName, authenticationId, registerPassword,
+                                 domainHost, domainPort);
         }
 
-        // Reads a number from the user as string, and than makes a call by using the softphone's StartCall() method.
-        private void StartToDial()
+        // изменение ползунка с громкостью
+        private void volumeSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
         {
-            AddToLogMessage("To start a call, type the number and press Enter: ");
-            string numberToDial = "89648468742";
-            while (string.IsNullOrEmpty(numberToDial))
+            // change graphics
+            if (volumeSlider.Value == 0)
             {
-                numberToDial = Console.ReadLine();
+                var source = new Uri(@"/SipClient;component/Resources/speaker_off_64x64.png", UriKind.Relative);
+                this.SoundIcon.Source = new BitmapImage(source);
             }
-            _softphone.StartCall(numberToDial);
-        }
-
-        private void StartExample()
-        {
-            bool inputOK = true;
-            while (inputOK)
+            else
             {
-                AddToLogMessage("\nPlease select the codecs you would like to use by providing their numbers separated with commas (or if you wish to use the default codes, please press Enter): ");
-
-                string codec = Read("Codecs", false);
-
-                if (string.IsNullOrEmpty(codec))
-                {
-                    AddToLogMessage("Default settings.");
-                    WriteEnabledCodecs();
-                    inputOK = false;
-                }
-                else
-                {
-                    var codecs = codec.Split(',');
-
-                    foreach (var s in _softphone.Codecs())
-                    {
-                        // This line disables all of the default codecs that are used.
-                        _softphone.DisableCodec(s.PayloadType);
-                    }
-
-                    foreach (var s in codecs)
-                    {
-                        try
-                        {
-                            var codecPayload = Convert.ToInt32(s);
-
-                            if (_softphone.Codecs().
-                                Any(item => item.PayloadType == codecPayload))
-                            {
-                                _softphone.EnableCodec(codecPayload);
-                                inputOK = false;
-                            }
-                            else
-                            {
-                                AddToLogMessage(string.Format("Invalid payload type: {0}", codecPayload));
-                            }
-
-                        }
-                        catch (Exception)
-                        {
-                            AddToLogMessage(string.Format("Invalid payload type: {0}", s));
-                        }
-
-                    }
-                    if (inputOK == false)
-                    {
-                        WriteEnabledCodecs();
-                    }
-                }
+                var source = new Uri(@"/SipClient;component/Resources/speaker_on_64x64.png", UriKind.Relative);
+                this.SoundIcon.Source = new BitmapImage(source);
             }
         }
-
-
-        /// <summary>
-        /// A helper method for reading the inputs. Even handles, if an information is necessary.
-        /// </summary>
-        private string Read(string inputName, bool readWhileEmpty)
+        
+        // обработка ввода текста
+        private void txtPhoneNumber_TextChanged(object sender, TextChangedEventArgs e)
         {
-            while (true)
+            if (String.IsNullOrWhiteSpace(txtPhoneNumber.Text))
             {
-                string input = Console.ReadLine();
-
-                if (!readWhileEmpty)
-                    return input;
-
-                if (!string.IsNullOrEmpty(input))
-                    return input;
-
-                AddToLogMessage(inputName + " cannot be empty.");
-                AddToLogMessage(inputName + ": ");
+                txtPhoneNumber.Text = "Введите номер";
             }
         }
 
-        /// <summary>
-        /// This method will display the names of the enabled codecs on the consol.
-        /// </summary>
-        private void WriteEnabledCodecs()
+        private void txtPhoneNumber_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
-            AddToLogMessage("\nEnabled codecs:");
-            foreach (var codecInfo in _softphone.Codecs())
+            if (String.IsNullOrEmpty(numberToDial.ToString()))
             {
-                if (codecInfo.Enabled)
-                {
-                    AddToLogMessage(string.Format("{0,3} {1}", codecInfo.PayloadType, codecInfo.CodecName));
-                }
+                txtPhoneNumber.Text = String.Empty;
             }
-        }
-
-        private void ReadRegisterInfos()
-        {
-            AddToLogMessage("-----------------------------------------------");
-            AddToLogMessage("List of the available codecs:");
-            WriteCodecs();
-        }
-
-        /// <summary>
-        /// This method write to the consol the names of the available codecs.
-        /// </summary>
-        private void WriteCodecs()
-        {
-
-            AddToLogMessage("\nAudio codecs:");
-            foreach (var codecInfo in _softphone.Codecs())
-            {
-                if (codecInfo.MediaType == CodecMediaType.Audio)
-                {
-                    AddToLogMessage(string.Format("{0,3} {1}", codecInfo.PayloadType, codecInfo.CodecName));
-                }
-            }
-
-            AddToLogMessage("\nVideo codecs:");
-            foreach (var codecInfo in _softphone.Codecs())
-            {
-                if (codecInfo.MediaType == CodecMediaType.Video)
-                {
-                    AddToLogMessage(string.Format("{0,3} {1}", codecInfo.PayloadType, codecInfo.CodecName));
-                }
-            }
-        }
-
-        // On the Connect button Clicked
-        private void btnConnect_Click(object sender, RoutedEventArgs e)
-        {
-
         }
     }
 }
