@@ -2,40 +2,42 @@
 using System.Linq;
 using System.Text;
 using System.Windows;
-using Ozeki.VoIP;
 using System.ComponentModel;
-using Ozeki.Media;
 using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Text.RegularExpressions;
 using System.Windows.Input;
 using System.Windows.Threading;
-using System.Threading.Tasks;
+using System.Threading;
+using Ozeki.VoIP;
+using Ozeki.Media;
+using Ozeki.Media.MediaHandlers;
+using Ozeki.VoIP.SDK;
 
 namespace SipClient
 {
     /// <summary>
     /// Interaction logic for MainWindow.xaml
     /// </summary>
-    public partial class MainWindow : Window
+    public partial class PhoneWindow : Window
     {
         private ISoftPhone _softPhone;
         private IPhoneLine _phoneLine;
         private RegState _phoneLineState;
-        private IPhoneCall _call;
+        private IPhoneCall call;
 
-        private Microphone _microphone;
-        private Speaker _speaker;
-        private MediaConnector _connector;
-        private PhoneCallAudioSender _mediaSender;
-        private PhoneCallAudioReceiver _mediaReceiver;
+        public static Microphone microphone;
+        public static Speaker speaker;
+        private MediaConnector connector;
+        private PhoneCallAudioSender mediaSender;
+        private PhoneCallAudioReceiver mediaReceiver;
 
         private const string _PHONE_NUMBER_HELP = "Введите номер";
 
         private bool _incomingCall;
 
-        public MainWindow()
+        public PhoneWindow()
         {
             // Initialize all controls
             InitializeComponent();
@@ -47,18 +49,18 @@ namespace SipClient
 
         void Window_Loaded(object sender, RoutedEventArgs e)
         {
-            _microphone = Microphone.GetDefaultDevice();
-            _speaker = Speaker.GetDefaultDevice();
-            _connector = new MediaConnector();
-            _mediaSender = new PhoneCallAudioSender();
-            _mediaReceiver = new PhoneCallAudioReceiver();
+            microphone = Microphone.GetDefaultDevice();
+            speaker = Speaker.GetDefaultDevice();
+            connector = new MediaConnector();
+            mediaSender = new PhoneCallAudioSender();
+            mediaReceiver = new PhoneCallAudioReceiver();
+
+            speaker.Volume = (float)volumeSlider.Value;
+
+            miUsername.Header = Login;
 
             // Запускаем иниицализацию в параллельном потоке
-            Task.Factory.StartNew(() =>
-            {
-                InitializeSoftphone();
-            });
-
+            ThreadPool.QueueUserWorkItem(InitializeSoftphone);
         }
 
         // Создание событий для кнопок и т.д
@@ -78,20 +80,15 @@ namespace SipClient
             // set asterisk and cell button event
             btnActionAsterisk.Click += btnActionClick;
             btnActionCell.Click += btnActionClick;
-
-            //TextBoxEvents
-
         }
 
-        void InitializeSoftphone()
+        private void InitializeSoftphone(object state)
         {
             try
             {
-                _softPhone = SoftPhoneFactory.CreateSoftPhone(SoftPhoneFactory.GetLocalIP(), 5700, 5750);
+                _softPhone = SoftPhoneFactory.CreateSoftPhone(SoftPhoneFactory.GetLocalIP(), 5000, 15000);
 
-                SIPAccount sa = new SIPAccount(true, "test", "test", "test", "testpass", "192.168.0.5");
-
-                _phoneLine = _softPhone.CreatePhoneLine(sa);
+                _phoneLine = _softPhone.CreatePhoneLine(new SIPAccount(true, Login, Login, Login, Password, "192.168.0.5"));
                 _phoneLine.RegistrationStateChanged += _phoneLine_RegistrationStateChanged;
 
                 _softPhone.IncomingCall += _softPhone_IncomingCall;
@@ -109,7 +106,7 @@ namespace SipClient
         }
 
         // Обработка изменения состояния соединения с сервером
-        void _phoneLine_RegistrationStateChanged(object sender, RegistrationStateChangedArgs e)
+        private void _phoneLine_RegistrationStateChanged(object sender, RegistrationStateChangedArgs e)
         {
             _phoneLineState = e.State;
 
@@ -120,7 +117,7 @@ namespace SipClient
                     //set unavailable icon and text message
                     var source = new Uri("/SipClient;component/Resources/inactive.png", UriKind.Relative);
                     this.StatusIcon.Source = new BitmapImage(source);
-                    textStatus.Text = "Нет подключения!";
+                    txtConnectionStatus.Text = "Нет подключения!";
                 });
             }
             else if (_phoneLineState == RegState.RegistrationSucceeded) // Online!
@@ -128,51 +125,60 @@ namespace SipClient
                 InvokeGUIThread(() =>
                 {
                     //set available icon and text message
-                    var source = new Uri("/SipClient;component/Resources/active.png", UriKind.Relative);
-                    this.StatusIcon.Source = new BitmapImage(source);
-                    textStatus.Text = "Подключен!";
+                    this.PhoneIcon.Source = new BitmapImage(new Uri("/SipClient;component/Resources/telephone.png", UriKind.Relative));
+                    this.StatusIcon.Source = new BitmapImage(new Uri("/SipClient;component/Resources/active.png", UriKind.Relative));
+                    txtConnectionStatus.Text = "Подключен!";
                 });
             }
         }
 
         // Check number
-        bool IsPhoneNumber(string number)
+        private bool IsPhoneNumber(string number)
         {
-            return Regex.Match(number, @"^(\+[0-9]{9})$").Success;
+            return Regex.Match(number, @"^((\+7|7|8)+([0-9]){4})?([0-9]{6})$").Success;
         }
 
         // Обработка входящего звонка
-        void _softPhone_IncomingCall(object sender, VoIPEventArgs<IPhoneCall> e)
+        private void _softPhone_IncomingCall(object sender, VoIPEventArgs<IPhoneCall> e)
         {
             var userName = e.Item.DialInfo.Dialed;
-            // Вывод сообщений
-            InvokeGUIThread(() => { });
+            // Выводим инфу о звонящем
+            InvokeGUIThread(() =>
+            {
+                this.txtCallStatus.Text = "Входящий";
+            });
 
-            _call = e.Item;
+            var incomingWindow = new IncomingCallWindow();
+            incomingWindow.Call = call;
+            incomingWindow.RingingUser = e.Item.DialInfo;
+            incomingWindow.Show();
+
+            call = e.Item;
             WireUpCallEvents();
             _incomingCall = true;
-
-            // Выводим инфу о звонящем
-            //ShowUserInfos(_otherParty);
         }
 
         // Вызов события изменения состояния звонка
-        void call_CallStateChanged(object sender, CallStateChangedArgs e)
+        private void call_CallStateChanged(object sender, CallStateChangedArgs e)
         {
             if (e.State == CallState.Answered) // звонок принят
             {
                 StartDevices();
-                _mediaSender.AttachToCall(_call);
-                _mediaReceiver.AttachToCall(_call);
+                mediaSender.AttachToCall(call);
+                mediaReceiver.AttachToCall(call);
 
                 InvokeGUIThread(() =>
                 {
-                    var source = new Uri("/SipClient;component/Resources/call-end.png", UriKind.Relative);
-                    this.PhoneIcon.Source = new BitmapImage(source);
+                    txtCallStatus.Text = "Устанавливается соединение";
+                    this.PhoneIcon.Source = new BitmapImage(new Uri("/SipClient;component/Resources/call-end.png", UriKind.Relative));
                 });
             }
             else if (e.State == CallState.InCall) // на линии
             {
+                InvokeGUIThread(() =>
+                {
+                    txtCallStatus.Text = "Дозвон";
+                });
                 StartDevices();
             }
 
@@ -182,8 +188,8 @@ namespace SipClient
                 InvokeGUIThread(() =>
                 {
                     txtPhoneNumber.Text = String.Empty;
-                    var source = new Uri("/SipClient;component/Resources/telephone.png", UriKind.Relative);
-                    this.PhoneIcon.Source = new BitmapImage(source);
+                    txtCallStatus.Text = "Удерживается на линии";
+                    this.PhoneIcon.Source = new BitmapImage(new Uri("/SipClient;component/Resources/telephone.png", UriKind.Relative));
                 });
             }
             else
@@ -195,20 +201,14 @@ namespace SipClient
             {
                 StopDevices();
 
-                _mediaSender.Detach();
-                _mediaReceiver.Detach();
+                mediaSender.Detach();
+                mediaReceiver.Detach();
 
                 WireDownCallEvents();
 
-                _call = null;
+                call = null;
 
-                // линия свободна - можем звонить
-                InvokeGUIThread(() =>
-                {
-                    txtPhoneNumber.Text = String.Empty;
-                    var source = new Uri("/SipClient;component/Resources/telephone.png", UriKind.Relative);
-                    this.PhoneIcon.Source = new BitmapImage(source);
-                });
+                InvokeGUIThread(() => { txtPhoneNumber.Text = String.Empty; });
             }
         }
 
@@ -229,70 +229,74 @@ namespace SipClient
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
-        void btnActionClick(object sender, EventArgs e)
+        private void btnActionClick(object sender, EventArgs e)
         {
             var btn = sender as Button;
 
-            if (_call != null)
+            if (call != null)
                 return;
 
             if (btn == null)
                 return;
 
             // add to phone number collection
+            if (txtPhoneNumber.Text.Equals(_PHONE_NUMBER_HELP))
+            {
+                txtPhoneNumber.Text = String.Empty;
+            }
             txtPhoneNumber.Text += Convert.ToString(btn.Content).Trim();
         }
 
         /// <summary>
         /// Запуск медиа девайсов
         /// </summary>
-        void StartDevices()
+        private void StartDevices()
         {
-            if (_microphone != null)
-                _microphone.Start();
+            if (microphone != null)
+                microphone.Start();
 
-            if (_speaker != null)
-                _speaker.Start();
+            if (speaker != null)
+                speaker.Start();
         }
 
         /// <summary>
         /// Отсановка медиа девайсов
         /// </summary>
-        void StopDevices()
+        private void StopDevices()
         {
-            if (_microphone != null)
-                _microphone.Stop();
+            if (microphone != null)
+                microphone.Stop();
 
-            if (_speaker != null)
-                _speaker.Stop();
+            if (speaker != null)
+                speaker.Stop();
         }
 
         /// <summary>
         /// Соединяем медиа девайсы
         /// </summary>
-        void ConnectMedia()
+        private void ConnectMedia()
         {
-            if (_microphone != null)
-                _connector.Connect(_microphone, _mediaSender);
+            if (microphone != null)
+                connector.Connect(microphone, mediaSender);
 
-            if (_speaker != null)
-                _connector.Connect(_mediaReceiver, _speaker);
+            if (speaker != null)
+                connector.Connect(mediaReceiver, speaker);
         }
 
-        void WireUpCallEvents()
+        private void WireUpCallEvents()
         {
-            _call.CallStateChanged += (call_CallStateChanged);
+            call.CallStateChanged += (call_CallStateChanged);
         }
 
-        void WireDownCallEvents()
+        private void WireDownCallEvents()
         {
-            _call.CallStateChanged -= (call_CallStateChanged);
+            call.CallStateChanged -= (call_CallStateChanged);
         }
 
         /// <summary>
         ///  Передача команды в главный поток
         /// </summary>
-        void InvokeGUIThread(Action action)
+        private void InvokeGUIThread(Action action)
         {
             Dispatcher.Invoke(action);
         }
@@ -306,12 +310,12 @@ namespace SipClient
             if (_incomingCall)
             {
                 _incomingCall = false;
-                _call.Answer();
+                call.Answer();
 
                 return;
             }
             // Если не удалось создать подключение
-            if (_call != null)
+            if (call != null)
                 return;
             // Проверяем соединение
             if (_phoneLineState != RegState.RegistrationSucceeded)
@@ -335,9 +339,9 @@ namespace SipClient
                 }
 
                 // make a call to number
-                _call = _softPhone.CreateCallObject(_phoneLine, phoneNumber);
+                call = _softPhone.CreateCallObject(_phoneLine, phoneNumber);
                 WireUpCallEvents();
-                _call.Start();
+                call.Start();
             }
         }
 
@@ -346,20 +350,20 @@ namespace SipClient
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
-        void btn_HangUp_Click(object sender, EventArgs e)
+        private void btn_HangUp_Click(object sender, EventArgs e)
         {
-            if (_call != null)
+            if (call != null)
             {
-                if (_incomingCall && _call.CallState == CallState.Ringing)
+                if (_incomingCall && call.CallState == CallState.Ringing)
                 {
-                    _call.Reject();
+                    call.Reject();
                 }
                 else
                 {
-                    _call.HangUp();
+                    call.HangUp();
                 }
                 _incomingCall = false;
-                _call = null;
+                call = null;
             }
             txtPhoneNumber.Text = string.Empty;
         }
@@ -369,30 +373,30 @@ namespace SipClient
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
-        void btn_Transfer_Click(object sender, EventArgs e)
+        private void btn_Transfer_Click(object sender, EventArgs e)
         {
             string transferTo = "1001";
 
-            if (_call == null)
+            if (call == null)
                 return;
 
             if (string.IsNullOrEmpty(transferTo))
                 return;
 
-            if (_call.CallState != CallState.InCall)
+            if (call.CallState != CallState.InCall)
                 return;
 
-            _call.BlindTransfer(transferTo);
+            call.BlindTransfer(transferTo);
             InvokeGUIThread(() =>
             {
                 //tb_Display.Text = "Transfering to:" + transferTo;
             });
         }
 
-        void btn_Hold_Click(object sender, EventArgs e)
+        private void btn_Hold_Click(object sender, EventArgs e)
         {
-            if (_call != null)
-                _call.ToggleHold();
+            if (call != null)
+                call.ToggleHold();
         }
 
         private bool isVolumeOff;
@@ -447,5 +451,91 @@ namespace SipClient
                 });
             }
         }
+
+        private void Window_Closing(object sender, CancelEventArgs e)
+        {
+            // Вешаем трубку и разрываем соединение
+            if (call != null)
+            {
+                call.HangUp();
+                call = null;
+            }
+        }
+
+        private void Window_KeyDown(object sender, KeyEventArgs e)
+        {
+            // Избегаем повторного ввода
+            if (txtPhoneNumber.IsFocused)
+                return;
+
+            switch (e.Key)
+            {
+                // Remove last characters
+                case Key.Back:
+                case Key.Delete:
+                    if (!txtPhoneNumber.Text.Equals(_PHONE_NUMBER_HELP) && !(txtPhoneNumber.Text.Length == 0))
+                    {
+                        txtPhoneNumber.Text = txtPhoneNumber.Text.Remove(txtPhoneNumber.Text.Length - 1, 1);
+                    }
+                    break;
+                // short input
+                case Key.NumPad0:
+                case Key.NumPad1:
+                case Key.NumPad2:
+                case Key.NumPad3:
+                case Key.NumPad4:
+                case Key.NumPad5:
+                case Key.NumPad6:
+                case Key.NumPad7:
+                case Key.NumPad8:
+                case Key.NumPad9:
+                    {
+                        //clear field
+                        if (txtPhoneNumber.Text.Equals(_PHONE_NUMBER_HELP))
+                            txtPhoneNumber.Text = String.Empty;
+                        //add number
+                        txtPhoneNumber.Text += (Convert.ToInt32(e.Key) - 74);
+                    }
+                    break;
+                // short input 
+                case Key.D0:
+                case Key.D1:
+                case Key.D2:
+                case Key.D3:
+                case Key.D4:
+                case Key.D5:
+                case Key.D6:
+                case Key.D7:
+                case Key.D8:
+                case Key.D9:
+                    {
+                        //clear field
+                        if (txtPhoneNumber.Text.Equals(_PHONE_NUMBER_HELP))
+                            txtPhoneNumber.Text = String.Empty;
+                        //add number
+                        txtPhoneNumber.Text += (Convert.ToInt16(e.Key) - 34);
+                    }
+                    break;
+            }
+        }
+
+        private void btnMinimizeClick(object sender, RoutedEventArgs e)
+        {
+            this.WindowState = System.Windows.WindowState.Minimized;
+        }
+
+        private void btnCloseClick(object sender, RoutedEventArgs e)
+        {
+            this.Close();
+        }
+
+        private void Window_MouseDown(object sender, MouseButtonEventArgs e)
+        {
+            this.DragMove();
+        }
+
+        public string Login { get; set; }
+
+        public string Password { get; set; }
     }
 }
