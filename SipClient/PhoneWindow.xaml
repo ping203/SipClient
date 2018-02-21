@@ -3,105 +3,119 @@
         ResizeMode="NoResize" Title="SipClient"
         WindowStartupLocation="CenterScreen" Loaded="Window_Loaded" Closing="Window_Closing" 
         Icon="/SipClient;component/Resources/icon.ico" KeyDown="Window_KeyDown" MouseDown="Window_MouseDown"
-        WindowStyle="None" AllowsTransparency="True" BorderBrush="#4a71ef" BorderThickness="2"
-        Background="{x:Null}" mc:Ignorable="d" xmlns:d="http://schemas.microsoft.com/expression/blend/2008" xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" d:DesignHeight="365" SizeToContent="WidthAndHeight">
-    <Border Background="White" Margin="1" Height="319">
-        <Grid Name="LayoutRoot">
-                <!-- Главная таблица разметки -->
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="95" />
-                    <RowDefinition Height="40" />
-                    <RowDefinition Height="180" />
-                    <RowDefinition Height="2*" />
-                </Grid.RowDefinitions>
-                <Menu VerticalAlignment="Top" HorizontalAlignment="Left" Background="{x:Null}">
-                    <!-- Login menu -->
-                    <MenuItem Height="24" Width="24" HorizontalAlignment="Left">
-                        <MenuItem.Icon>
-                            <Image Source="/SipClient;component/Resources/key.png"/>
-                        </MenuItem.Icon>
-                    </MenuItem>
-                </Menu>
-                <Menu VerticalAlignment="Top" HorizontalAlignment="Center" Background="{x:Null}">
-                    <!--Username-->
-                    <MenuItem x:Name="miUsername" FontSize="14" FontWeight="Medium"  Header="username" Height="24" Width="100"/>
-                </Menu>
-                <Menu VerticalAlignment="Top" HorizontalAlignment="Right" Background="{x:Null}">
-                    <!-- right button set -->
-                    <MenuItem Height="24" Width="24" HorizontalAlignment="Right" Click="btnMinimizeClick">
-                        <MenuItem.Icon>
-                            <Image Source="/SipClient;component/Resources/minimize.png"/>
-                        </MenuItem.Icon>
-                    </MenuItem>
-                    <MenuItem Height="24" Width="24" HorizontalAlignment="Right" Click="btnCloseClick">
-                        <MenuItem.Icon>
-                            <Image Source="/SipClient;component/Resources/close.png" />
-                        </MenuItem.Icon>
-                    </MenuItem>
-                </Menu>
-                <!--Добавим раздел с пользовательскими настройками-->
-                <Grid Grid.RowSpan="4" Margin="0,22,0,-20">
+        WindowStyle="None" AllowsTransparency="True" BorderBrush="#4a71ef" BorderThickness="2" 
+        mc:Ignorable="d" xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+         SizeToContent="WidthAndHeight" d:DesignHeight="308" d:DesignWidth="215">
+    <Border>
+        <Grid>
+            <!--Gradient Background-->
+            <Rectangle>
+                <Rectangle.Fill>
+                    <LinearGradientBrush>
+                        <GradientStop Color="#2aba3f" Offset="0"></GradientStop>
+                        <GradientStop Color="#5ee170" Offset="0.2"></GradientStop>
+                        <GradientStop Color="#5ee170" Offset="0.5"></GradientStop>
+                        <GradientStop Color="White" Offset="1"></GradientStop>
+                    </LinearGradientBrush>
+                </Rectangle.Fill>
+            </Rectangle>
+            <!--Controls-->
+            <Border Background="{x:Null}">
+                <Grid>
                     <Grid.RowDefinitions>
-                        <RowDefinition Height="40" />
-                        <RowDefinition Height="40" />
+                        <RowDefinition Height="20"></RowDefinition>
+                        <RowDefinition></RowDefinition>
                     </Grid.RowDefinitions>
-                    <!--Первая строка отображает состояние соединения-->
-                    <DockPanel Grid.Row="0" Margin="4,0,0,4">
-                        <Image DockPanel.Dock="Left" Name="StatusIcon" Source="SipClient;component/Resources/inactive.png" />
-                        <TextBlock DockPanel.Dock="Left" Margin="4" FontSize="14" Foreground="#575757" Name="txtConnectionStatus" Text="Нет подключения" />
-                        <TextBlock DockPanel.Dock="Right" FontSize="14" Foreground="#575757" Name="txtCallStatus"/>
-                    </DockPanel>
-                    <!--Вторая - volume control-->
-                    <DockPanel Grid.Row="1" Margin="4,0,0,4">
-                        <Image DockPanel.Dock="Left" Name="SoundIcon" Source="/SipClient;component/Resources/speaker_on_64x64.png" />
-                        <Slider DockPanel.Dock="Right" Height="26" Width="200" Maximum="1" Name="volumeSlider" Value="0.8" ValueChanged="volumeSlider_ValueChanged" LargeChange="0.1" />
-                    </DockPanel>
+                    <!--Menu-->
+                    <Menu VerticalAlignment="Top" HorizontalAlignment="Left" Background="{x:Null}">
+                        <!-- Login menu -->
+                        <MenuItem Height="24" Width="24" HorizontalAlignment="Left">
+                            <MenuItem.Icon>
+                                <Image Source="/SipClient;component/Resources/key.png"/>
+                            </MenuItem.Icon>
+                        </MenuItem>
+                    </Menu>
+                    <Menu VerticalAlignment="Top" HorizontalAlignment="Center" Background="{x:Null}">
+                        <!--Username-->
+                        <MenuItem x:Name="miUsername" FontSize="14" FontWeight="Medium"  Header="username" Height="24" Width="100"/>
+                    </Menu>
+                    <Menu VerticalAlignment="Top" HorizontalAlignment="Right" Background="{x:Null}">
+                        <!-- right button set -->
+                        <MenuItem Height="24" Width="24" HorizontalAlignment="Right" Click="btnMinimizeClick">
+                            <MenuItem.Icon>
+                                <Image Source="/SipClient;component/Resources/minimize.png"/>
+                            </MenuItem.Icon>
+                        </MenuItem>
+                        <MenuItem Height="24" Width="24" HorizontalAlignment="Right" Click="btnCloseClick">
+                            <MenuItem.Icon>
+                                <Image Source="/SipClient;component/Resources/close.png" />
+                            </MenuItem.Icon>
+                        </MenuItem>
+                    </Menu>
+                    <Border Grid.Row="1" Padding="4,0,4,0">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="80"></RowDefinition>
+                                <RowDefinition Height="160"></RowDefinition>
+                            </Grid.RowDefinitions>
+                            <Border Grid.Row="0" Background="White" Margin="0,0,0,2" Height="100" >
+                                <!--Добавим раздел с пользовательскими настройками-->
+                                <Grid Grid.RowSpan="4" Margin="0,22,0,-20">
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="30" />
+                                        <RowDefinition Height="30" />
+                                    </Grid.RowDefinitions>
+                                    <!--Первая строка отображает состояние соединения-->
+                                    <DockPanel Grid.Row="0" Margin="4,0,0,4">
+                                        <Image DockPanel.Dock="Left" Name="StatusIcon" Source="SipClient;component/Resources/inactive.png" />
+                                        <TextBlock DockPanel.Dock="Left" Margin="4" FontSize="12" Foreground="#575757" Name="txtConnectionStatus" Text="Нет подключения" />
+                                        <TextBlock DockPanel.Dock="Right" FontSize="12" Foreground="#575757" Name="txtCallStatus"/>
+                                    </DockPanel>
+                                    <!--Вторая - volume control-->
+                                    <DockPanel Grid.Row="1" Margin="4,0,0,4">
+                                        <Image DockPanel.Dock="Left" Name="SoundIcon" Source="/SipClient;component/Resources/speaker_on_64x64.png" />
+                                        <Slider DockPanel.Dock="Right" Height="26" Maximum="1" Name="volumeSlider" Value="0.8" ValueChanged="volumeSlider_ValueChanged" LargeChange="0.1" />
+                                    </DockPanel>
+                                </Grid>
+                            </Border>
+                            <!--Numpad Panel-->
+                            <Grid Grid.Row="1" Background="White">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition />
+                                    <RowDefinition />
+                                    <RowDefinition />
+                                    <RowDefinition />
+                                    <RowDefinition />
+                                </Grid.RowDefinitions>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition />
+                                    <ColumnDefinition />
+                                    <ColumnDefinition />
+                                </Grid.ColumnDefinitions>
+                                <TextBox x:Name="txtPhoneNumber" Grid.ColumnSpan="2" FontSize="14.667" BorderBrush="#969696"/>
+                                <Button x:Name="btnConnectOrReject" Click="buttonPickUp_Click"  Grid.Column="2" Style="{StaticResource {x:Static ToolBar.ButtonStyleKey}}">
+                                    <ContentControl>
+                                        <Image Name="PhoneIcon" Source="/SipClient;component/Resources/call-end.png"/>
+                                    </ContentControl>
+                                </Button>
+                                <Button Content="1" Grid.Column="0" Margin="2" Grid.Row="1" Width="63" Tag="1" Click="buttonKeyPadButton_Click" PreviewMouseDown="buttonKeyPad_MouseDown" PreviewMouseUp="buttonKeyPad_MouseUp" FontSize="14.667" Style="{StaticResource {x:Static ToolBar.ButtonStyleKey}}" Height="30" />
+                                <Button Content="2" Grid.Column="1" Margin="2" Grid.Row="1" Width="63" Tag="2" Click="buttonKeyPadButton_Click" PreviewMouseDown="buttonKeyPad_MouseDown" PreviewMouseUp="buttonKeyPad_MouseUp" FontSize="14.667" Style="{StaticResource {x:Static ToolBar.ButtonStyleKey}}" Height="30" />
+                                <Button Content="3" Grid.Column="2" Margin="2" Grid.Row="1" Width="63" Tag="3" Click="buttonKeyPadButton_Click" PreviewMouseDown="buttonKeyPad_MouseDown" PreviewMouseUp="buttonKeyPad_MouseUp" FontSize="14.667" Style="{StaticResource {x:Static ToolBar.ButtonStyleKey}}" Height="30" />
+                                <Button Content="4" Grid.Column="0" Margin="2" Grid.Row="2" Width="63" Tag="4" Click="buttonKeyPadButton_Click" PreviewMouseDown="buttonKeyPad_MouseDown" PreviewMouseUp="buttonKeyPad_MouseUp" FontSize="14.667" Style="{StaticResource {x:Static ToolBar.ButtonStyleKey}}" Height="30" />
+                                <Button Content="5" Grid.Column="1" Margin="2" Grid.Row="2" Width="63" Tag="5" Click="buttonKeyPadButton_Click" PreviewMouseDown="buttonKeyPad_MouseDown" PreviewMouseUp="buttonKeyPad_MouseUp" FontSize="14.667" Style="{StaticResource {x:Static ToolBar.ButtonStyleKey}}" Height="30" />
+                                <Button Content="6" Grid.Column="2" Margin="2" Grid.Row="2" Width="63" Tag="6" Click="buttonKeyPadButton_Click" PreviewMouseDown="buttonKeyPad_MouseDown" PreviewMouseUp="buttonKeyPad_MouseUp" FontSize="14.667" Style="{StaticResource {x:Static ToolBar.ButtonStyleKey}}" Height="30" />
+                                <Button Content="7" Grid.Column="0" Margin="2" Grid.Row="3" Width="63" Tag="7" Click="buttonKeyPadButton_Click" PreviewMouseDown="buttonKeyPad_MouseDown" PreviewMouseUp="buttonKeyPad_MouseUp" FontSize="14.667" Style="{StaticResource {x:Static ToolBar.ButtonStyleKey}}" Height="30" />
+                                <Button Content="8" Grid.Column="1" Margin="2" Grid.Row="3" Width="63" Tag="8" Click="buttonKeyPadButton_Click" PreviewMouseDown="buttonKeyPad_MouseDown" PreviewMouseUp="buttonKeyPad_MouseUp" FontSize="14.667" Style="{StaticResource {x:Static ToolBar.ButtonStyleKey}}" Height="30" />
+                                <Button Content="9" Grid.Column="2" Margin="2" Grid.Row="3" Width="63" Tag="9" Click="buttonKeyPadButton_Click" PreviewMouseDown="buttonKeyPad_MouseDown" PreviewMouseUp="buttonKeyPad_MouseUp" FontSize="14.667" Style="{StaticResource {x:Static ToolBar.ButtonStyleKey}}" Height="30" />
+                                <Button Content="0" Grid.Column="1" Margin="2" Grid.Row="4" Width="63" Tag="0" Click="buttonKeyPadButton_Click" PreviewMouseDown="buttonKeyPad_MouseDown" PreviewMouseUp="buttonKeyPad_MouseUp" FontSize="14.667" Style="{StaticResource {x:Static ToolBar.ButtonStyleKey}}" Height="30" />
+                                <Button Content="*" Grid.Column="0" Margin="2" Grid.Row="4" Width="63" Tag="10" Click="buttonKeyPadButton_Click" PreviewMouseDown="buttonKeyPad_MouseDown" PreviewMouseUp="buttonKeyPad_MouseUp" FontSize="14.667" Style="{StaticResource {x:Static ToolBar.ButtonStyleKey}}" Height="38" />
+                                <Button Content="#" Grid.Column="3" Margin="2" Grid.Row="4" Width="63" Tag="11" Click="buttonKeyPadButton_Click" PreviewMouseDown="buttonKeyPad_MouseDown" PreviewMouseUp="buttonKeyPad_MouseUp" FontSize="14.667" Style="{StaticResource {x:Static ToolBar.ButtonStyleKey}}" Height="38" />
+                            </Grid>
+                        </Grid>
+                    </Border>
                 </Grid>
-                <!--Добавляем раздел с полем ввода и кнопкой вызова\отмены в первый раздел-->
-                <Grid Grid.Row="1" Margin="0,7,4,177" Grid.RowSpan="2">
-                    <Grid.RowDefinitions>
-                        <RowDefinition />
-                    </Grid.RowDefinitions>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="171*" />
-                        <ColumnDefinition Width="50*" />
-                    </Grid.ColumnDefinitions>
-                    <!-- Добавляем элементы-->
-                    <TextBox Name="txtPhoneNumber" FontSize="16" Foreground="#575757" TextAlignment="Left" GotFocus="txtPhoneNumber_GotFocus" LostFocus="txtPhoneNumber_LostFocus"></TextBox>
-                    <!--Иконка для кнопки дозвона-->
-                    <Button Grid.Column="1" Name="btnConnectOrReject" HorizontalAlignment="Center" VerticalAlignment="Center" Click="btnConnectOrReject_Click">
-                        <ContentControl Width="40" Height="20" Margin="4">
-                            <Image Name="PhoneIcon" Source="/SipClient;component/Resources/call-end.png"/>
-                        </ContentControl>
-                    </Button>
-                </Grid>
-                <!--Добавляем раздел с кнопками во второй раздел-->
-                <Grid Grid.Row="2" Margin="3">
-                    <Grid.RowDefinitions>
-                        <RowDefinition />
-                        <RowDefinition />
-                        <RowDefinition />
-                        <RowDefinition />
-                    </Grid.RowDefinitions>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition />
-                        <ColumnDefinition />
-                        <ColumnDefinition />
-                    </Grid.ColumnDefinitions>
-                    <!-- Добавляем элементы-->
-                    <Button Name="btnAction1" Grid.Column="0" Grid.Row="0" Margin="1" Background="AliceBlue" FontSize="28" Content="1"/>
-                    <Button Name="btnAction2" Grid.Column="1" Grid.Row="0" Margin="1" Background="AliceBlue" FontSize="28" Content="2"/>
-                    <Button Name="btnAction3" Grid.Column="3" Grid.Row="0" Margin="1" Background="AliceBlue" FontSize="28" Content="3"/>
-                    <Button Name="btnAction4" Grid.Column="0" Grid.Row="1" Margin="1" Background="AliceBlue" FontSize="28" Content="4"/>
-                    <Button Name="btnAction5" Grid.Column="1" Grid.Row="1" Margin="1" Background="AliceBlue" FontSize="28" Content="5"/>
-                    <Button Name="btnAction6" Grid.Column="3" Grid.Row="1" Margin="1" Background="AliceBlue" FontSize="28" Content="6"/>
-                    <Button Name="btnAction7" Grid.Column="0" Grid.Row="2" Margin="1" Background="AliceBlue" FontSize="28" Content="7"/>
-                    <Button Name="btnAction8" Grid.Column="1" Grid.Row="2" Margin="1" Background="AliceBlue" FontSize="28" Content="8"/>
-                    <Button Name="btnAction9" Grid.Column="3" Grid.Row="2" Margin="1" Background="AliceBlue" FontSize="28" Content="9"/>
-                    <Button Name="btnActionAsterisk" Grid.Column="0" Grid.Row="3" Margin="1" Background="AliceBlue" FontSize="28" Content="*"/>
-                    <Button Name="btnAction0" Grid.Column="1" Grid.Row="3" Margin="1" Background="AliceBlue" FontSize="28" Content="1"/>
-                    <Button Name="btnActionCell" Grid.Column="3" Grid.Row="3" Margin="1" Background="AliceBlue" FontSize="28" Content="#"/>
-                </Grid>
-            </Grid>
+            </Border>
+        </Grid>
     </Border>
 </Window>
