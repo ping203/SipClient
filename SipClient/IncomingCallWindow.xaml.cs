@@ -21,7 +21,7 @@ namespace SipClient
     {
         private static SoundPlayer soundPlayer = new SoundPlayer();
 
-        public Ozeki.VoIP.DialInfo RingingUser { get; set; }
+        public Ozeki.VoIP.DialInfo DialInfo { get; set; }
 
         public IncomingCallWindow()
         {
@@ -43,23 +43,24 @@ namespace SipClient
             //Play Sound
             soundPlayer.Stream = Properties.Resources.signal;
             soundPlayer.PlayLooping();  
-
             // Load Inforamtion
-            this.txtCallName.Text = RingingUser.CallerID;
-            this.txtPhoneNumber.Text = RingingUser.DialedString;
+            this.txtCallName.Text = DialInfo.CallerDisplay;
+            this.txtPhoneNumber.Text = DialInfo.CallerID;
         }
 
         private void btnAccept_Click(object sender, RoutedEventArgs e)
         {
-            if (soundPlayer.IsLoadCompleted)
-                soundPlayer.Stop();
-            
+            // принимаем звонок 
+            this.DialogResult = true;
+            this.Close();
         }
 
         private void btnHoldOn_Click(object sender, RoutedEventArgs e)
         {
-            if (soundPlayer.IsLoadCompleted)
-                soundPlayer.Stop();
+            // отклоняем звонок 
+            this.DialogResult = false;
+            // закрываем окно
+            this.Close();
         }
 
         private void Window_Closed(object sender, EventArgs e)
@@ -67,7 +68,5 @@ namespace SipClient
             if (soundPlayer.IsLoadCompleted)
                 soundPlayer.Stop();
         }
-
-        public Ozeki.VoIP.IPhoneCall Call { get; set; }
     }
 }

@@ -10,6 +10,8 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
+using System.Xml;
+using System.IO;
 
 namespace SipClient
 {
@@ -25,8 +27,8 @@ namespace SipClient
 
         private void btnLogin_Click(object sender, RoutedEventArgs e)
         {
-            string login = txtLogin.Password;
-            string password = txtPassword.Password;
+            string login = pswLogin.Password;
+            string password = pswPassword.Password;
             if (String.IsNullOrEmpty(login) || String.IsNullOrEmpty(password))
             {
                 MessageBox.Show("Логин или пароль не корректны");
@@ -39,8 +41,8 @@ namespace SipClient
         {
             if (e.Key == Key.Enter)
             {
-                string login = txtLogin.Password;
-                string password = txtPassword.Password;
+                string login = pswLogin.Password;
+                string password = pswPassword.Password;
                 if (String.IsNullOrEmpty(login) || String.IsNullOrEmpty(password))
                 {
                     MessageBox.Show("Логин или пароль не корректны");
@@ -70,7 +72,60 @@ namespace SipClient
 
         private void btnCloseClick(object sender, RoutedEventArgs e)
         {
-            this.Close();
+            App.Current.Shutdown();
         }
+
+        private void btnSettings_Click(object sender, RoutedEventArgs e)
+        {
+            var settingForm = new SettingsWindow();
+            settingForm.Owner = this;
+
+            settingForm.txtHostAddress.Text = host;
+            settingForm.txtPassword.Text = password;
+            settingForm.txtLogin.Text = login;
+            settingForm.XmlSettings = xml_settings;
+
+            this.Visibility = System.Windows.Visibility.Hidden;
+            if (settingForm.ShowDialog() == true)
+            {
+                this.Visibility = System.Windows.Visibility.Visible;
+                LoadConfigure(Properties.Resources.SettingsFile);
+            }
+        }
+
+        private void Window_Loaded(object sender, RoutedEventArgs e)
+        {
+            LoadConfigure(Properties.Resources.SettingsFile);
+        }
+
+        private void LoadConfigure(string pathToFile)
+        {
+            try
+            {
+                xml_settings = new XmlDocument();
+                xml_settings.Load(new FileStream(pathToFile, FileMode.Open, FileAccess.Read));
+                var xRoot = xml_settings.DocumentElement;
+                host = Convert.ToString(xRoot["Default"]["Host"].Attributes.GetNamedItem("ip").Value);
+                login = Convert.ToString(xRoot["Default"]["Login"].InnerText);
+                password = Convert.ToString(xRoot["Default"]["Password"].InnerText);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.ToString());
+            }
+
+            // auto input
+            if (!String.IsNullOrEmpty(host) && !String.IsNullOrEmpty(login) && !String.IsNullOrEmpty(password))
+            {
+                pswLogin.Password = login;
+                pswPassword.Password = password;
+            }
+        }
+
+        private string host = String.Empty;
+        private string login = String.Empty;
+        private string password = String.Empty;
+
+        private static XmlDocument xml_settings;
     }
 }

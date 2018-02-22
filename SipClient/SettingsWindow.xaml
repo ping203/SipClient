@@ -1,0 +1,67 @@
+﻿<Window x:Class="SipClient.SettingsWindow" 
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Background="{x:Null}" AllowsTransparency="True" WindowStyle="None"
+        Title="CallStat"
+         Icon="/SipClient;component/Resources/icon.ico"
+        WindowStartupLocation="CenterOwner" 
+        MouseDown="Window_MouseDown" ResizeMode="NoResize" mc:Ignorable="d" xmlns:d="http://schemas.microsoft.com/expression/blend/2008" xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" d:DesignHeight="202" SizeToContent="WidthAndHeight">
+    <Border Background="{x:Null}" BorderBrush="#4a71ef" BorderThickness="1">
+        <Grid>
+            <!--Gradient Background-->
+            <Rectangle>
+                <Rectangle.Fill>
+                    <LinearGradientBrush>
+                        <GradientStop Color="#2aba3f" Offset="0"></GradientStop>
+                        <GradientStop Color="#5ee170" Offset="0.1"></GradientStop>
+                        <GradientStop Color="#5ee170" Offset="0.2"></GradientStop>
+                        <GradientStop Color="White" Offset="0.8"></GradientStop>
+                    </LinearGradientBrush>
+                </Rectangle.Fill>
+            </Rectangle>
+
+            <Border BorderBrush="#4a71ef">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="20"></RowDefinition>
+                        <RowDefinition></RowDefinition>
+                        <RowDefinition Height="30"></RowDefinition>
+                    </Grid.RowDefinitions>
+                    <TextBlock Padding="2" Text="Настройки приложения"></TextBlock>
+                    <Menu Background="{x:Null}" HorizontalAlignment="Right">
+                        <!-- exit button-->
+                        <MenuItem Height="20" Width="20" Click="btnCloseClick">
+                            <MenuItem.Icon>
+                                <Image Margin="-4" Source="/SipClient;component/Resources/close.png" />
+                            </MenuItem.Icon>
+                        </MenuItem>
+                    </Menu>
+                    <!--Contetnt block-->
+                    <Border Grid.Row="1" Margin="5,5,5,0" Background="AliceBlue" BorderBrush="#575757" BorderThickness="1" Height="104">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="88"></ColumnDefinition>
+                                <ColumnDefinition Width="172"></ColumnDefinition>
+                            </Grid.ColumnDefinitions>
+                            <Border BorderBrush="#575757" BorderThickness="2" Padding="5,5,0,5" Margin="5,5,0,5">
+                                <StackPanel>
+                                    <TextBlock Text="Хост адресс"  Margin="5"></TextBlock>
+                                    <TextBlock Text="Пароль"  Margin="5"></TextBlock>
+                                    <TextBlock Text="Логин"  Margin="5"></TextBlock>
+                                </StackPanel>
+                            </Border>
+                            <Border Grid.Column="1" BorderBrush="#575757" BorderThickness="2" Padding="5" Margin="5">
+                                <StackPanel>
+                                    <TextBox x:Name="txtHostAddress" Margin="2"></TextBox>
+                                    <TextBox x:Name="txtPassword" Margin="2"></TextBox>
+                                    <TextBox x:Name="txtLogin" Margin="2"></TextBox>
+                                </StackPanel>
+                            </Border>
+                        </Grid>
+                    </Border>
+                    <Button x:Name="btnAppend" Height="24" Grid.Row="2" Content="Принять" HorizontalAlignment="Center" Click="btnAppend_Click"></Button>
+                </Grid>
+            </Border>
+        </Grid>
+    </Border>
+</Window>

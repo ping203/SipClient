@@ -4,7 +4,8 @@
         Title="SipClient Login" WindowStyle="None" AllowsTransparency="True"
         Background="{x:Null}" WindowStartupLocation="CenterScreen" 
         MouseDown="Window_MouseDown" KeyDown="Window_KeyDown" ResizeMode="NoResize" 
-        Icon="/SipClient;component/Resources/icon.ico" mc:Ignorable="d" xmlns:d="http://schemas.microsoft.com/expression/blend/2008" xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" d:DesignWidth="361" SizeToContent="WidthAndHeight">
+        Icon="/SipClient;component/Resources/icon.ico" mc:Ignorable="d" xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" d:DesignWidth="266" SizeToContent="WidthAndHeight" d:DesignHeight="133" Loaded="Window_Loaded">
     <Border Background="White" BorderBrush="#4a71ef" BorderThickness="1">
         <Grid>
             <!--Gradient Background-->
@@ -19,42 +20,61 @@
                 </Rectangle.Fill>
             </Rectangle>
             <Grid>
-                <Menu VerticalAlignment="Top" HorizontalAlignment="Right" Background="{x:Null}" Grid.Row="0">
-                <!-- right button set -->
-                <MenuItem Height="24" Width="24" HorizontalAlignment="Right" Click="btnCloseClick">
-                    <MenuItem.Icon>
-                        <Image Source="/SipClient;component/Resources/close.png" />
-                    </MenuItem.Icon>
-                </MenuItem>
-                </Menu>
-                <Border Margin="8,8,8,5" Background="{x:Null}">
+                <Border Height="20" VerticalAlignment="Top">
                     <Grid>
-                        <Grid.RowDefinitions>
-                            <RowDefinition></RowDefinition>
-                            <RowDefinition></RowDefinition>
-                            <RowDefinition></RowDefinition>
-                        </Grid.RowDefinitions>
-                        <TextBlock  FontSize="18" Grid.Row="0" HorizontalAlignment="Center" Text="Вход в клиент"/>
-                        <Border Grid.Row="1">
-                            <Grid Height="80" Background="White">
-                                <Grid.RowDefinitions>
-                                    <RowDefinition Height="40"></RowDefinition>
-                                    <RowDefinition Height="40"></RowDefinition>
-                                </Grid.RowDefinitions>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="130"></ColumnDefinition>
-                                    <ColumnDefinition Width="180"></ColumnDefinition>
-                                </Grid.ColumnDefinitions>
-                                <TextBlock Grid.Column="0" Grid.Row="0" Text="Введите Логин" FontSize="16"  HorizontalAlignment="Left"/>
-                                <PasswordBox x:Name="txtLogin" Grid.Column="1" Grid.Row="0" PasswordChar="*" FontSize="16" />
-                                <TextBlock  Grid.Column="0" Grid.Row="1" Text="Введите Пароль" FontSize="16" HorizontalAlignment="Left"/>
-                                <PasswordBox x:Name="txtPassword" Grid.Column="1" Grid.Row="1" PasswordChar="*" FontSize="16"/>
-                            </Grid>
-                        </Border>
-                        <Button x:Name="btnLogin" Grid.Row="2" Content="Войти" HorizontalAlignment="Center" Width="70" Height="30" FontSize="16" Margin="2"/>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="24"></ColumnDefinition>
+                            <ColumnDefinition></ColumnDefinition>
+                            <ColumnDefinition Width="24"></ColumnDefinition>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="Вход в клиент" Grid.Column="1" Margin="58,0,55,0" Width="80" FontSize="12"></TextBlock>
+                        <Menu Background="{x:Null}" Grid.Column="2" HorizontalAlignment="Right">
+                            <!-- exit button-->
+                            <MenuItem Height="20" Width="20" Click="btnCloseClick">
+                                <MenuItem.Icon>
+                                    <Image Margin="-4" Source="/SipClient;component/Resources/close.png" />
+                                </MenuItem.Icon>
+                            </MenuItem>
+                        </Menu>
+                        <Menu Background="{x:Null}" Grid.Column="0" HorizontalAlignment="Left">
+                            <!-- exit button-->
+                            <MenuItem x:Name="btnSettings" Height="20" Width="20" Click="btnSettings_Click">
+                                <MenuItem.Icon>
+                                    <Image Margin="-4" Source="/SipClient;component/Resources/settings_icon.png" />
+                                </MenuItem.Icon>
+                            </MenuItem>
+                        </Menu>
                     </Grid>
+                </Border>
+                <Border Margin="0,20,0,0" Background="{x:Null}">
+                    <StackPanel>
+                        <Grid Height="20" Background="White">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="120"></ColumnDefinition>
+                                <ColumnDefinition Width="120"></ColumnDefinition>
+                            </Grid.ColumnDefinitions>
+                            <Border  BorderBrush="#575757" BorderThickness="0.8">
+                                <TextBlock Text="Введите Логин" Height="20" VerticalAlignment="Top" FontSize="14"></TextBlock>
+                            </Border>
+                            <PasswordBox x:Name="pswLogin" Grid.Column="1" PasswordChar="*" MaxLength="20" FontSize="14" BorderBrush="#575757" BorderThickness="0.8"></PasswordBox>
+                        </Grid>
+
+
+                        <Grid Height="20" Background="White">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="120"></ColumnDefinition>
+                                <ColumnDefinition Width="120"></ColumnDefinition>
+                            </Grid.ColumnDefinitions>
+                            <Border  BorderBrush="#575757" BorderThickness="0.8">
+                                <TextBlock Grid.Column="0" Text="Введите Пароль" FontSize="14"></TextBlock>
+                            </Border>
+                            <PasswordBox x:Name="pswPassword" Grid.Column="1" PasswordChar="*" MaxLength="20" FontSize="14" BorderBrush="#575757" BorderThickness="0.8"></PasswordBox>
+                        </Grid>
+
+                        <Button x:Name="btnLogin" HorizontalAlignment="Center" BorderBrush="#575757" BorderThickness="1" Margin="5" Content="Войти" Click="btnLogin_Click"></Button>
+                    </StackPanel>
                 </Border>
             </Grid>
         </Grid>
-    </Border>    
+    </Border>
 </Window>

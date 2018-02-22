@@ -6,112 +6,121 @@
         WindowStyle="None" AllowsTransparency="True" BorderBrush="#4a71ef" BorderThickness="2" 
         mc:Ignorable="d" xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-         SizeToContent="WidthAndHeight" d:DesignHeight="308" d:DesignWidth="215">
+         SizeToContent="WidthAndHeight" d:DesignHeight="346" d:DesignWidth="250">
     <Border>
         <Grid>
             <!--Gradient Background-->
             <Rectangle>
                 <Rectangle.Fill>
                     <LinearGradientBrush>
-                        <GradientStop Color="#2aba3f" Offset="0"></GradientStop>
                         <GradientStop Color="#5ee170" Offset="0.2"></GradientStop>
-                        <GradientStop Color="#5ee170" Offset="0.5"></GradientStop>
-                        <GradientStop Color="White" Offset="1"></GradientStop>
+                        <GradientStop Color="#5ee170" Offset="0.1"></GradientStop>
+                        <GradientStop Color="#5ee170" Offset="0.8"></GradientStop>
+                        <GradientStop Color="White" Offset="0.6"></GradientStop>
                     </LinearGradientBrush>
                 </Rectangle.Fill>
             </Rectangle>
+            <!--Menu-->
+            <!--Menu-->
+            <Menu VerticalAlignment="Top" HorizontalAlignment="Left" Background="{x:Null}">
+                <!-- Login menu -->
+                <MenuItem Height="24" Width="24" HorizontalAlignment="Left" Click="Login_Click">
+                    <MenuItem.Icon>
+                        <Image Source="/SipClient;component/Resources/key.png"/>
+                    </MenuItem.Icon>
+                </MenuItem>
+            </Menu>
+            <Menu VerticalAlignment="Top" HorizontalAlignment="Center" Background="{x:Null}">
+                <!--Username-->
+                <MenuItem x:Name="miUsername" Click="miUsername_Click" FontSize="14" FontWeight="Medium"  Header="username" Height="24" Width="100"/>
+            </Menu>
+            <Menu VerticalAlignment="Top" HorizontalAlignment="Right" Background="{x:Null}">
+                <!-- right button set -->
+                <MenuItem Height="24" Width="24" HorizontalAlignment="Right" Click="btnMinimizeClick">
+                    <MenuItem.Icon>
+                        <Image Source="/SipClient;component/Resources/minimize.png"/>
+                    </MenuItem.Icon>
+                </MenuItem>
+                <MenuItem Height="24" Width="24" HorizontalAlignment="Right" Click="btnCloseClick">
+                    <MenuItem.Icon>
+                        <Image Source="/SipClient;component/Resources/close.png"/>
+                    </MenuItem.Icon>
+                </MenuItem>
+            </Menu>
             <!--Controls-->
-            <Border Background="{x:Null}">
+            <Border Background="White" Margin="0,25,0,4">
                 <Grid>
                     <Grid.RowDefinitions>
-                        <RowDefinition Height="20"></RowDefinition>
-                        <RowDefinition></RowDefinition>
+                        <RowDefinition Height="74"></RowDefinition>
+                        <RowDefinition Height="190"></RowDefinition>
                     </Grid.RowDefinitions>
-                    <!--Menu-->
-                    <Menu VerticalAlignment="Top" HorizontalAlignment="Left" Background="{x:Null}">
-                        <!-- Login menu -->
-                        <MenuItem Height="24" Width="24" HorizontalAlignment="Left">
-                            <MenuItem.Icon>
-                                <Image Source="/SipClient;component/Resources/key.png"/>
-                            </MenuItem.Icon>
-                        </MenuItem>
-                    </Menu>
-                    <Menu VerticalAlignment="Top" HorizontalAlignment="Center" Background="{x:Null}">
-                        <!--Username-->
-                        <MenuItem x:Name="miUsername" FontSize="14" FontWeight="Medium"  Header="username" Height="24" Width="100"/>
-                    </Menu>
-                    <Menu VerticalAlignment="Top" HorizontalAlignment="Right" Background="{x:Null}">
-                        <!-- right button set -->
-                        <MenuItem Height="24" Width="24" HorizontalAlignment="Right" Click="btnMinimizeClick">
-                            <MenuItem.Icon>
-                                <Image Source="/SipClient;component/Resources/minimize.png"/>
-                            </MenuItem.Icon>
-                        </MenuItem>
-                        <MenuItem Height="24" Width="24" HorizontalAlignment="Right" Click="btnCloseClick">
-                            <MenuItem.Icon>
-                                <Image Source="/SipClient;component/Resources/close.png" />
-                            </MenuItem.Icon>
-                        </MenuItem>
-                    </Menu>
-                    <Border Grid.Row="1" Padding="4,0,4,0">
+                    <!--StatusPanel-->
+                    <Border Grid.Row="0" Margin="2">
                         <Grid>
                             <Grid.RowDefinitions>
-                                <RowDefinition Height="80"></RowDefinition>
-                                <RowDefinition Height="160"></RowDefinition>
+                                <RowDefinition Height="35"></RowDefinition>
+                                <RowDefinition Height="35"></RowDefinition>
                             </Grid.RowDefinitions>
-                            <Border Grid.Row="0" Background="White" Margin="0,0,0,2" Height="100" >
-                                <!--Добавим раздел с пользовательскими настройками-->
-                                <Grid Grid.RowSpan="4" Margin="0,22,0,-20">
-                                    <Grid.RowDefinitions>
-                                        <RowDefinition Height="30" />
-                                        <RowDefinition Height="30" />
-                                    </Grid.RowDefinitions>
-                                    <!--Первая строка отображает состояние соединения-->
-                                    <DockPanel Grid.Row="0" Margin="4,0,0,4">
-                                        <Image DockPanel.Dock="Left" Name="StatusIcon" Source="SipClient;component/Resources/inactive.png" />
-                                        <TextBlock DockPanel.Dock="Left" Margin="4" FontSize="12" Foreground="#575757" Name="txtConnectionStatus" Text="Нет подключения" />
-                                        <TextBlock DockPanel.Dock="Right" FontSize="12" Foreground="#575757" Name="txtCallStatus"/>
-                                    </DockPanel>
-                                    <!--Вторая - volume control-->
-                                    <DockPanel Grid.Row="1" Margin="4,0,0,4">
-                                        <Image DockPanel.Dock="Left" Name="SoundIcon" Source="/SipClient;component/Resources/speaker_on_64x64.png" />
-                                        <Slider DockPanel.Dock="Right" Height="26" Maximum="1" Name="volumeSlider" Value="0.8" ValueChanged="volumeSlider_ValueChanged" LargeChange="0.1" />
-                                    </DockPanel>
-                                </Grid>
-                            </Border>
-                            <!--Numpad Panel-->
-                            <Grid Grid.Row="1" Background="White">
-                                <Grid.RowDefinitions>
-                                    <RowDefinition />
-                                    <RowDefinition />
-                                    <RowDefinition />
-                                    <RowDefinition />
-                                    <RowDefinition />
-                                </Grid.RowDefinitions>
+                            <Grid Grid.Row="0" Margin="2">
                                 <Grid.ColumnDefinitions>
-                                    <ColumnDefinition />
-                                    <ColumnDefinition />
-                                    <ColumnDefinition />
+                                    <ColumnDefinition Width="40"></ColumnDefinition>
+                                    <ColumnDefinition Width="90"></ColumnDefinition>
+                                    <ColumnDefinition Width="10"></ColumnDefinition>
+                                    <ColumnDefinition></ColumnDefinition>
                                 </Grid.ColumnDefinitions>
-                                <TextBox x:Name="txtPhoneNumber" Grid.ColumnSpan="2" FontSize="14.667" BorderBrush="#969696"/>
-                                <Button x:Name="btnConnectOrReject" Click="buttonPickUp_Click"  Grid.Column="2" Style="{StaticResource {x:Static ToolBar.ButtonStyleKey}}">
-                                    <ContentControl>
-                                        <Image Name="PhoneIcon" Source="/SipClient;component/Resources/call-end.png"/>
-                                    </ContentControl>
-                                </Button>
-                                <Button Content="1" Grid.Column="0" Margin="2" Grid.Row="1" Width="63" Tag="1" Click="buttonKeyPadButton_Click" PreviewMouseDown="buttonKeyPad_MouseDown" PreviewMouseUp="buttonKeyPad_MouseUp" FontSize="14.667" Style="{StaticResource {x:Static ToolBar.ButtonStyleKey}}" Height="30" />
-                                <Button Content="2" Grid.Column="1" Margin="2" Grid.Row="1" Width="63" Tag="2" Click="buttonKeyPadButton_Click" PreviewMouseDown="buttonKeyPad_MouseDown" PreviewMouseUp="buttonKeyPad_MouseUp" FontSize="14.667" Style="{StaticResource {x:Static ToolBar.ButtonStyleKey}}" Height="30" />
-                                <Button Content="3" Grid.Column="2" Margin="2" Grid.Row="1" Width="63" Tag="3" Click="buttonKeyPadButton_Click" PreviewMouseDown="buttonKeyPad_MouseDown" PreviewMouseUp="buttonKeyPad_MouseUp" FontSize="14.667" Style="{StaticResource {x:Static ToolBar.ButtonStyleKey}}" Height="30" />
-                                <Button Content="4" Grid.Column="0" Margin="2" Grid.Row="2" Width="63" Tag="4" Click="buttonKeyPadButton_Click" PreviewMouseDown="buttonKeyPad_MouseDown" PreviewMouseUp="buttonKeyPad_MouseUp" FontSize="14.667" Style="{StaticResource {x:Static ToolBar.ButtonStyleKey}}" Height="30" />
-                                <Button Content="5" Grid.Column="1" Margin="2" Grid.Row="2" Width="63" Tag="5" Click="buttonKeyPadButton_Click" PreviewMouseDown="buttonKeyPad_MouseDown" PreviewMouseUp="buttonKeyPad_MouseUp" FontSize="14.667" Style="{StaticResource {x:Static ToolBar.ButtonStyleKey}}" Height="30" />
-                                <Button Content="6" Grid.Column="2" Margin="2" Grid.Row="2" Width="63" Tag="6" Click="buttonKeyPadButton_Click" PreviewMouseDown="buttonKeyPad_MouseDown" PreviewMouseUp="buttonKeyPad_MouseUp" FontSize="14.667" Style="{StaticResource {x:Static ToolBar.ButtonStyleKey}}" Height="30" />
-                                <Button Content="7" Grid.Column="0" Margin="2" Grid.Row="3" Width="63" Tag="7" Click="buttonKeyPadButton_Click" PreviewMouseDown="buttonKeyPad_MouseDown" PreviewMouseUp="buttonKeyPad_MouseUp" FontSize="14.667" Style="{StaticResource {x:Static ToolBar.ButtonStyleKey}}" Height="30" />
-                                <Button Content="8" Grid.Column="1" Margin="2" Grid.Row="3" Width="63" Tag="8" Click="buttonKeyPadButton_Click" PreviewMouseDown="buttonKeyPad_MouseDown" PreviewMouseUp="buttonKeyPad_MouseUp" FontSize="14.667" Style="{StaticResource {x:Static ToolBar.ButtonStyleKey}}" Height="30" />
-                                <Button Content="9" Grid.Column="2" Margin="2" Grid.Row="3" Width="63" Tag="9" Click="buttonKeyPadButton_Click" PreviewMouseDown="buttonKeyPad_MouseDown" PreviewMouseUp="buttonKeyPad_MouseUp" FontSize="14.667" Style="{StaticResource {x:Static ToolBar.ButtonStyleKey}}" Height="30" />
-                                <Button Content="0" Grid.Column="1" Margin="2" Grid.Row="4" Width="63" Tag="0" Click="buttonKeyPadButton_Click" PreviewMouseDown="buttonKeyPad_MouseDown" PreviewMouseUp="buttonKeyPad_MouseUp" FontSize="14.667" Style="{StaticResource {x:Static ToolBar.ButtonStyleKey}}" Height="30" />
-                                <Button Content="*" Grid.Column="0" Margin="2" Grid.Row="4" Width="63" Tag="10" Click="buttonKeyPadButton_Click" PreviewMouseDown="buttonKeyPad_MouseDown" PreviewMouseUp="buttonKeyPad_MouseUp" FontSize="14.667" Style="{StaticResource {x:Static ToolBar.ButtonStyleKey}}" Height="38" />
-                                <Button Content="#" Grid.Column="3" Margin="2" Grid.Row="4" Width="63" Tag="11" Click="buttonKeyPadButton_Click" PreviewMouseDown="buttonKeyPad_MouseDown" PreviewMouseUp="buttonKeyPad_MouseUp" FontSize="14.667" Style="{StaticResource {x:Static ToolBar.ButtonStyleKey}}" Height="38" />
+                                <Image Grid.Column="0" Name="StatusIcon" Source="SipClient;component/Resources/inactive.png" />
+                                <StackPanel Grid.Column="1">
+                                    <TextBlock Text="Статус" Foreground="#575757" FontSize="10"></TextBlock>
+                                    <TextBlock FontSize="10" Name="txtConnectionStatus" Text="Нет подключения!" />
+                                </StackPanel>
+                                <StackPanel Grid.Column="4">
+                                    <TextBlock Text="Статус Звонка" Foreground="#575757" FontSize="10"></TextBlock>
+                                    <TextBlock FontSize="10" Name="txtCallStatus" Text="Ожидание!" />
+                                </StackPanel>
                             </Grid>
+                            <Grid Grid.Row="1" Margin="2">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="40"></ColumnDefinition>
+                                    <ColumnDefinition></ColumnDefinition>
+                                </Grid.ColumnDefinitions>
+                                <Image Name="SoundIcon" Grid.Column="0" Source="/SipClient;component/Resources/speaker_on_64x64.png"></Image>
+                                <Slider Grid.Column="1" Height="26" Maximum="1" Name="volumeSlider" Value="0.8" ValueChanged="volumeSlider_ValueChanged" LargeChange="0.1" />
+                            </Grid>
+                        </Grid>
+                    </Border>
+                    <!--Numpad-->
+                    <Border Grid.Row="1">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition></RowDefinition>
+                                <RowDefinition></RowDefinition>
+                                <RowDefinition></RowDefinition>
+                                <RowDefinition></RowDefinition>
+                                <RowDefinition></RowDefinition>
+                            </Grid.RowDefinitions>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition></ColumnDefinition>
+                                <ColumnDefinition></ColumnDefinition>
+                                <ColumnDefinition></ColumnDefinition>
+                            </Grid.ColumnDefinitions>
+                            <TextBox x:Name="txtPhoneNumber" Grid.ColumnSpan="2" Grid.Row="0" BorderBrush="#979797" BorderThickness="1" TextAlignment="Left" GotFocus="txtPhoneNumber_GotFocus" LostFocus="txtPhoneNumber_LostFocus" FontSize="18" MaxLength="13"/>
+                            <Button x:Name="btnConnectOrReject" Click="btnConnectOrReject_Click" Grid.Row="0" Grid.Column="2" BorderBrush="#979797" BorderThickness="1" >
+                                <ContentControl>
+                                    <Image Name="PhoneIcon" Source="/SipClient;component/Resources/call-end.png"/>
+                                </ContentControl>
+                            </Button>
+                            <Button Grid.Row="1" Grid.Column="0" BorderBrush="#979797" BorderThickness="1" Tag="1" Click="buttonKeyPadButton_Click" PreviewMouseDown="buttonKeyPad_MouseDown" PreviewMouseUp="buttonKeyPad_MouseUp" Content="1" FontSize="18" ></Button>
+                            <Button Grid.Row="1" Grid.Column="1" BorderBrush="#979797" BorderThickness="1" Tag="2" Click="buttonKeyPadButton_Click" PreviewMouseDown="buttonKeyPad_MouseDown" PreviewMouseUp="buttonKeyPad_MouseUp" Content="2" FontSize="18" ></Button>
+                            <Button Grid.Row="1" Grid.Column="2" BorderBrush="#979797" BorderThickness="1" Tag="3" Click="buttonKeyPadButton_Click" PreviewMouseDown="buttonKeyPad_MouseDown" PreviewMouseUp="buttonKeyPad_MouseUp" Content="3" FontSize="18" ></Button>
+                            <Button Grid.Row="2" Grid.Column="0" BorderBrush="#979797" BorderThickness="1" Tag="4" Click="buttonKeyPadButton_Click" PreviewMouseDown="buttonKeyPad_MouseDown" PreviewMouseUp="buttonKeyPad_MouseUp" Content="4" FontSize="18" ></Button>
+                            <Button Grid.Row="2" Grid.Column="1" BorderBrush="#979797" BorderThickness="1" Tag="5" Click="buttonKeyPadButton_Click" PreviewMouseDown="buttonKeyPad_MouseDown" PreviewMouseUp="buttonKeyPad_MouseUp" Content="5" FontSize="18" ></Button>
+                            <Button Grid.Row="2" Grid.Column="2" BorderBrush="#979797" BorderThickness="1" Tag="6" Click="buttonKeyPadButton_Click" PreviewMouseDown="buttonKeyPad_MouseDown" PreviewMouseUp="buttonKeyPad_MouseUp" Content="6" FontSize="18" ></Button>
+                            <Button Grid.Row="3" Grid.Column="0" BorderBrush="#979797" BorderThickness="1" Tag="7" Click="buttonKeyPadButton_Click" PreviewMouseDown="buttonKeyPad_MouseDown" PreviewMouseUp="buttonKeyPad_MouseUp" Content="7" FontSize="18" ></Button>
+                            <Button Grid.Row="3" Grid.Column="1" BorderBrush="#979797" BorderThickness="1" Tag="8" Click="buttonKeyPadButton_Click" PreviewMouseDown="buttonKeyPad_MouseDown" PreviewMouseUp="buttonKeyPad_MouseUp" Content="8" FontSize="18" ></Button>
+                            <Button Grid.Row="3" Grid.Column="2" BorderBrush="#979797" BorderThickness="1" Tag="9" Click="buttonKeyPadButton_Click" PreviewMouseDown="buttonKeyPad_MouseDown" PreviewMouseUp="buttonKeyPad_MouseUp" Content="9" FontSize="18" ></Button>
+                            <Button Grid.Row="4" Grid.Column="0" BorderBrush="#979797" BorderThickness="1" Tag="*" Click="buttonKeyPadButton_Click" PreviewMouseDown="buttonKeyPad_MouseDown" PreviewMouseUp="buttonKeyPad_MouseUp" Content="*" FontSize="22" ></Button>
+                            <Button Grid.Row="4" Grid.Column="1" BorderBrush="#979797" BorderThickness="1" Tag="0" Click="buttonKeyPadButton_Click" PreviewMouseDown="buttonKeyPad_MouseDown" PreviewMouseUp="buttonKeyPad_MouseUp" Content="0" FontSize="18" ></Button>
+                            <Button Grid.Row="4" Grid.Column="2" BorderBrush="#979797" BorderThickness="1" Tag="#" Click="buttonKeyPadButton_Click" PreviewMouseDown="buttonKeyPad_MouseDown" PreviewMouseUp="buttonKeyPad_MouseUp" Content="#" FontSize="18" ></Button>
                         </Grid>
                     </Border>
                 </Grid>
