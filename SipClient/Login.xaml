@@ -5,7 +5,8 @@
         Background="{x:Null}" WindowStartupLocation="CenterScreen" 
         MouseDown="Window_MouseDown" KeyDown="Window_KeyDown" ResizeMode="NoResize" 
         Icon="/SipClient;component/Resources/icon.ico" mc:Ignorable="d" xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
-        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" d:DesignWidth="266" SizeToContent="WidthAndHeight" d:DesignHeight="133" Loaded="Window_Loaded">
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" d:DesignWidth="266" SizeToContent="WidthAndHeight" d:DesignHeight="133" 
+        Loaded="Window_Loaded">
     <Border Background="White" BorderBrush="#4a71ef" BorderThickness="1">
         <Grid>
             <!--Gradient Background-->

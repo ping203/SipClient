@@ -48,12 +48,6 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="UnitTest1.cs" />
   </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\SipClient\SipClient.csproj">
-      <Project>{47ED430C-B861-4D1A-A9A4-C1F4F713CFDC}</Project>
-      <Name>SipClient</Name>
-    </ProjectReference>
-  </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

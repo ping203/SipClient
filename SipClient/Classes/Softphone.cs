@@ -2,10 +2,10 @@
 using System.Collections.Generic;
 using System.Threading;
 using Ozeki.Media;
-using Ozeki.VoIP;
-using Ozeki.Media.MediaHandlers;
-using Ozeki.VoIP.SDK;
 using Ozeki.Media.Codec;
+using Ozeki.Media.MediaHandlers;
+using Ozeki.VoIP;
+using Ozeki.VoIP.SDK;
 
 namespace SipClient
 {

@@ -1,8 +1,12 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Settings>
-  <Default>
-    <Host ip="192.168.0.5"></Host>
+  <Default Ignore="false">
+    <Host Ip="192.168.0.5"></Host>
     <Login>test</Login>
     <Password>testpass</Password>
+    <MessageQueue>
+      <Orders Path=".\Private$\ordersqueue"></Orders>
+      <SipClient Path=".\Private$\sipclientqueue"></SipClient>
+    </MessageQueue>
   </Default>
 </Settings>

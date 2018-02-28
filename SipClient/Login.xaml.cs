@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Windows;
@@ -11,7 +12,6 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 using System.Xml;
-using System.IO;
 
 namespace SipClient
 {
@@ -23,6 +23,25 @@ namespace SipClient
         public Login()
         {
             InitializeComponent();
+
+            this.Activated += new EventHandler(Login_Activated);
+        }
+
+        void Login_Activated(object sender, EventArgs e)
+        {
+            if (ignoreFlag)
+            {
+                Verification(login, password);
+            }
+        }
+
+        private void Window_Loaded(object sender, RoutedEventArgs e)
+        {
+            string path = System.IO.Path.GetFullPath(Properties.Resources.PathToSettings);
+
+            if (!System.IO.File.Exists(path))
+                path = @"./Settings.xml";
+            LoadConfigure(path);
         }
 
         private void btnLogin_Click(object sender, RoutedEventArgs e)
@@ -62,12 +81,13 @@ namespace SipClient
         {
             // check password and login
 
-            // open MainWindow
+            // Create PhoneWindow
             PhoneWindow phoneWindow = new PhoneWindow();
             phoneWindow.Login = login;
             phoneWindow.Password = password;
             phoneWindow.Show();
-            this.Close();
+            // hide Login Window
+            this.Hide();
         }
 
         private void btnCloseClick(object sender, RoutedEventArgs e)
@@ -83,31 +103,35 @@ namespace SipClient
             settingForm.txtHostAddress.Text = host;
             settingForm.txtPassword.Text = password;
             settingForm.txtLogin.Text = login;
-            settingForm.XmlSettings = xml_settings;
 
             this.Visibility = System.Windows.Visibility.Hidden;
+
             if (settingForm.ShowDialog() == true)
             {
                 this.Visibility = System.Windows.Visibility.Visible;
-                LoadConfigure(Properties.Resources.SettingsFile);
+                LoadConfigure(Properties.Resources.PathToSettings);
             }
-        }
-
-        private void Window_Loaded(object sender, RoutedEventArgs e)
-        {
-            LoadConfigure(Properties.Resources.SettingsFile);
         }
 
         private void LoadConfigure(string pathToFile)
         {
             try
             {
-                xml_settings = new XmlDocument();
-                xml_settings.Load(new FileStream(pathToFile, FileMode.Open, FileAccess.Read));
-                var xRoot = xml_settings.DocumentElement;
-                host = Convert.ToString(xRoot["Default"]["Host"].Attributes.GetNamedItem("ip").Value);
-                login = Convert.ToString(xRoot["Default"]["Login"].InnerText);
-                password = Convert.ToString(xRoot["Default"]["Password"].InnerText);
+                XmlDocument xml_settings = new XmlDocument();
+                using (FileStream fs = new FileStream(pathToFile, FileMode.Open, FileAccess.Read))
+                {
+                    xml_settings.Load(fs);
+
+                    var xRoot = xml_settings.DocumentElement;
+                    host = Convert.ToString(xRoot["Default"]["Host"].Attributes.GetNamedItem("Ip").Value);
+                    login = Convert.ToString(xRoot["Default"]["Login"].InnerText);
+                    password = Convert.ToString(xRoot["Default"]["Password"].InnerText);
+                    ignoreFlag = Convert.ToBoolean(xRoot["Default"].Attributes["Ignore"].Value);
+
+                    MSQ.MessageQueueFactory.PathToOrdersMQ = Convert.ToString(xRoot["Default"]["MessageQueue"]["Orders"].Attributes["Path"].Value);
+
+                    MSQ.MessageQueueFactory.PathToSipClientMQ = Convert.ToString(xRoot["Default"]["MessageQueue"]["SipClient"].Attributes["Path"].Value);
+                }
             }
             catch (Exception ex)
             {
@@ -125,7 +149,6 @@ namespace SipClient
         private string host = String.Empty;
         private string login = String.Empty;
         private string password = String.Empty;
-
-        private static XmlDocument xml_settings;
+        private bool ignoreFlag = false;
     }
 }

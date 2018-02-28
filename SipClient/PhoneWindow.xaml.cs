@@ -1,19 +1,21 @@
 ﻿using System;
+using System.ComponentModel;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
+using System.Threading;
 using System.Windows;
-using System.ComponentModel;
 using System.Windows.Controls;
+using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
-using System.Text.RegularExpressions;
-using System.Windows.Input;
 using System.Windows.Threading;
-using System.Threading;
-using Ozeki.VoIP;
 using Ozeki.Media;
 using Ozeki.Media.MediaHandlers;
+using Ozeki.VoIP;
 using Ozeki.VoIP.SDK;
+using System.Messaging;
+using System.Runtime.Serialization.Formatters.Binary;
 
 namespace SipClient
 {
@@ -33,6 +35,9 @@ namespace SipClient
         int currentDtmfSignal;
 
         private const string _PHONE_NUMBER_HELP = "Введите номер";
+
+        private static MessageQueue SipClientQueue;
+        private static MessageQueue OrdersQueue;
 
         public PhoneWindow()
         {
@@ -56,6 +61,78 @@ namespace SipClient
 
             // Запускаем иниицализацию в параллельном потоке
             ThreadPool.QueueUserWorkItem(InitializeSoftphone);
+
+            //Инициализиурем погдключение к очереди сообщений
+            try
+            {
+                SipClientQueue = MSQ.MessageQueueFactory.GetSipClientQueue;
+                OrdersQueue = MSQ.MessageQueueFactory.GetOrdersQueue;
+
+                OrdersQueue.ReceiveCompleted += new ReceiveCompletedEventHandler(OrdersQueue_ReceiveCompleted);
+                OrdersQueue.BeginReceive();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message);
+            }
+        }
+
+        IncomingCallWindow incCallWindow = null;
+
+        // Обрабатываем входящее сообщение в парраллельном потоке
+        private void ProcessIncomingMessage(MSQ.Message message)
+        {
+            var customer = message.CustomerInfo;
+            var behaviour = message.BehaviourFlags;
+            // Устанавливаем контекст окна с входящим звонком
+            // если окно не существует
+            if (incCallWindow == null)
+            {
+                // Create Incoming Call Window
+                incCallWindow = new IncomingCallWindow();
+                incCallWindow.Phone = customer.PhoneNumber;
+                incCallWindow.Name = customer.Name;
+                incCallWindow.Address = customer.Addres;
+                incCallWindow.Call = call;
+
+                InvokeGUIThread(() =>
+                {
+                    incCallWindow.Show();
+                });
+            }
+            else // если окно уже существует
+            {
+                incCallWindow.SetAttributes(customer.PhoneNumber, customer.Name, customer.Addres);
+            }
+        }
+
+        // Получаем сообщения от Orders
+        private void OrdersQueue_ReceiveCompleted(object sender, ReceiveCompletedEventArgs e)
+        {
+            try
+            {
+                var msg = OrdersQueue.EndReceive(e.AsyncResult);
+
+                BinaryFormatter formatter = new BinaryFormatter();
+
+                if (msg != null)
+                {
+                    // Десериализую сообщение из потока
+                    MSQ.Message message = (MSQ.Message)formatter.Deserialize(msg.BodyStream);
+                    // Передаю на обработку в фоновый поток
+                    ThreadPool.QueueUserWorkItem(
+                        new WaitCallback((object state) =>
+                        {
+                            ProcessIncomingMessage(message);
+                        }), null);
+                }
+                // Разрешаю прием сообщений
+                OrdersQueue.BeginReceive();
+            }
+            catch (MessageQueueException msqex)
+            {
+                MessageBox.Show(msqex.Message + Environment.NewLine + msqex.StackTrace);
+            }            
         }
 
         /// <summary>
@@ -137,7 +214,7 @@ namespace SipClient
             }
             catch (Exception ex)
             {
-                InvokeGUIThread(() => { MessageBox.Show(ex.Message); });
+                InvokeGUIThread(() => { MessageBox.Show(ex.Message + Environment.NewLine + ex.StackTrace); });
             }
         }
 
@@ -190,6 +267,7 @@ namespace SipClient
             // Выводим инфу о звонящем
             var incomingCall = e.Item as IPhoneCall;
 
+            // Отклоняем входящие звонки при наличии активного соединения
             if (call != null)
             {
                 incomingCall.Reject();
@@ -199,19 +277,55 @@ namespace SipClient
             call = incomingCall;
             SubscribeToCallEvents(call);
 
-            bool? result = false;
             InvokeGUIThread(() =>
             {
                 this.txtCallStatus.Text = "Входящий";
                 this.PhoneIcon.Source = new BitmapImage(new Uri("/SipClient;component/Resources/call-end.png", UriKind.Relative));
-                incCallWindow = new IncomingCallWindow();
-                incCallWindow.DialInfo = e.Item.DialInfo;
-                result = incCallWindow.ShowDialog();
             });
 
-            if (result == true)
+            // Отправляем данные в Orders
+            SendMessageToOrders(e.Item.DialInfo);
+
+            // Проверяем возвращение сообщения от Orders
+            // Если сообщение идет более 2 секунд - создаем окно входящего звонка
+            ThreadPool.QueueUserWorkItem((object state) =>
             {
-                call.Answer();
+                Timer timer = new Timer((object state1) =>
+                {
+                    if (call != null)
+                    {
+                        if (call.IsIncoming && incCallWindow == null)
+                        {
+                            InvokeGUIThread(() =>
+                            {
+                                // Create new incoming window
+                                incCallWindow = new IncomingCallWindow();
+                                incCallWindow.Phone = e.Item.DialInfo.CallerID;
+                                incCallWindow.Name = e.Item.DialInfo.CallerDisplay;
+                                incCallWindow.Call = call;
+                                incCallWindow.Show();
+                            });
+                        }
+                    }
+                }, null, 1000, 0);
+            });
+        }
+
+        private void SendMessageToOrders(DialInfo dialInfo)
+        {
+            // Формируем сообщение и отправляем его
+            using (var msg = new System.Messaging.Message())
+            {
+                //create message
+                MSQ.Message msq_message = new MSQ.Message();
+                msq_message.BehaviourFlags = new MSQ.Behaviour() { isFinded = false, isCreateNewOrder = false };
+                msq_message.CustomerInfo = new MSQ.Customer() { Addres = String.Empty, Name = String.Empty, PhoneNumber = dialInfo.CallerID };
+                // Create message with guaranteed delivery
+                msg.Body = msq_message;
+                msg.Recoverable = true;
+                msg.Formatter = new BinaryMessageFormatter();
+                // Send to sipClient queue
+                SipClientQueue.Send(msg);
             }
         }
 
@@ -248,15 +362,6 @@ namespace SipClient
                 if (speaker != null)
                     speaker.Stop();
 
-                // Если идет входящий звонок - закрываем окно с приглашением
-                if (incCallWindow != null)
-                {
-                    InvokeGUIThread(() =>
-                    {
-                        incCallWindow.Close();
-                    });
-                }              
-
                 mediaSender.Detach();
                 mediaReceiver.Detach();
 
@@ -268,6 +373,17 @@ namespace SipClient
                     txtPhoneNumber.Text = String.Empty;
                     txtCallStatus.Text = "Готов";
                     this.PhoneIcon.Source = new BitmapImage(new Uri("/SipClient;component/Resources/telephone.png", UriKind.Relative));
+                });
+
+                //Закрываем окно с входящим звонком
+                InvokeGUIThread(() =>
+                {
+                    if (incCallWindow != null && incCallWindow.IsEnabled)
+                    {
+                        incCallWindow.Close();
+
+                        incCallWindow = null;
+                    };
                 });
             }
         }
@@ -423,23 +539,19 @@ namespace SipClient
                 call.ToggleHold();
         }
 
-        private bool isVolumeOff;
-        private IncomingCallWindow incCallWindow;
-
         // изменение ползунка с громкостью
         private void volumeSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
         {
             // change graphics
             if (volumeSlider.Value == 0)
             {
-                isVolumeOff = true;
                 InvokeGUIThread(() =>
                 {
                     var source = new Uri(@"/SipClient;component/Resources/speaker_off_64x64.png", UriKind.Relative);
                     this.SoundIcon.Source = new BitmapImage(source);
                 });
             }
-            else if (volumeSlider.Value > 0 && isVolumeOff)
+            else if (volumeSlider.Value > 0)
             {
                 InvokeGUIThread(() =>
                 {
@@ -447,6 +559,7 @@ namespace SipClient
                     this.SoundIcon.Source = new BitmapImage(source);
                 });
             }
+            speaker.Volume = (float)volumeSlider.Value;
         }
 
         private void txtPhoneNumber_GotFocus(object sender, RoutedEventArgs e)
@@ -549,6 +662,8 @@ namespace SipClient
         {
             DisconnectMedia();
             App.Current.Shutdown();
+            SipClientQueue.Close();
+            OrdersQueue.Close();
         }
 
         /// <summary>

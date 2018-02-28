@@ -121,6 +121,15 @@ namespace SipClient.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to ./private$/ordersqueue.
+        /// </summary>
+        internal static string MessageQueuePath {
+            get {
+                return ResourceManager.GetString("MessageQueuePath", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized resource of type System.Drawing.Bitmap.
         /// </summary>
         internal static System.Drawing.Bitmap minimize {
@@ -131,21 +140,21 @@ namespace SipClient.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to ./SipClient/Settings.xml.
+        /// </summary>
+        internal static string PathToSettings {
+            get {
+                return ResourceManager.GetString("PathToSettings", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized resource of type System.Drawing.Bitmap.
         /// </summary>
         internal static System.Drawing.Bitmap settings_icon {
             get {
                 object obj = ResourceManager.GetObject("settings_icon", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to ./Settings.xml.
-        /// </summary>
-        internal static string SettingsFile {
-            get {
-                return ResourceManager.GetString("SettingsFile", resourceCulture);
             }
         }
         

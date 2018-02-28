@@ -11,6 +11,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 using System.Xml;
+using System.IO;
 
 namespace SipClient
 {
@@ -45,26 +46,19 @@ namespace SipClient
 
             try
             {
-                XmlWriter xmlWriter = XmlWriter.Create(Properties.Resources.SettingsFile);
+                XmlDocument xDoc = new XmlDocument();
+                using (FileStream fs = new FileStream(System.IO.Path.GetFullPath(Properties.Resources.PathToSettings), FileMode.Open, FileAccess.Read))
+                {
+                    xDoc.Load(fs);
+                }
 
-                xmlWriter.WriteStartDocument();
-                xmlWriter.WriteStartElement("Settings");
-                xmlWriter.WriteStartElement("Default");
+                xDoc.DocumentElement["Default"]["Host"].Attributes.GetNamedItem("Ip").Value = host;
 
-                xmlWriter.WriteStartElement("Host");
-                xmlWriter.WriteAttributeString("ip", host);
-                xmlWriter.WriteEndElement();
+                xDoc.DocumentElement["Default"]["Login"].InnerText = login;
 
-                xmlWriter.WriteStartElement("Login");
-                xmlWriter.WriteString(login);
-                xmlWriter.WriteEndElement();
+                xDoc.DocumentElement["Default"]["Password"].InnerText = password;
 
-                xmlWriter.WriteStartElement("Password");
-                xmlWriter.WriteString(password);
-                xmlWriter.WriteEndElement();
-
-                xmlWriter.WriteEndDocument();
-                xmlWriter.Close();
+                xDoc.Save(System.IO.Path.GetFullPath(Properties.Resources.PathToSettings));
             }
             catch (Exception exc)
             {
@@ -73,7 +67,5 @@ namespace SipClient
             this.DialogResult = true;
             this.Close();
         }
-
-        public System.Xml.XmlDocument XmlSettings { get; set; }
     }
 }

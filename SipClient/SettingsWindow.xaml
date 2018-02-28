@@ -46,15 +46,16 @@
                             <Border BorderBrush="#575757" BorderThickness="2" Padding="5,5,0,5" Margin="5,5,0,5">
                                 <StackPanel>
                                     <TextBlock Text="Хост адресс"  Margin="5"></TextBlock>
-                                    <TextBlock Text="Пароль"  Margin="5"></TextBlock>
+
                                     <TextBlock Text="Логин"  Margin="5"></TextBlock>
+                                    <TextBlock Text="Пароль"  Margin="5"></TextBlock>
                                 </StackPanel>
                             </Border>
                             <Border Grid.Column="1" BorderBrush="#575757" BorderThickness="2" Padding="5" Margin="5">
                                 <StackPanel>
                                     <TextBox x:Name="txtHostAddress" Margin="2"></TextBox>
-                                    <TextBox x:Name="txtPassword" Margin="2"></TextBox>
                                     <TextBox x:Name="txtLogin" Margin="2"></TextBox>
+                                    <TextBox x:Name="txtPassword" Margin="2"></TextBox>
                                 </StackPanel>
                             </Border>
                         </Grid>

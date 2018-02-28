@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Media;
 using System.Text;
 using System.Windows;
 using System.Windows.Controls;
@@ -10,7 +11,6 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
-using System.Media;
 
 namespace SipClient
 {
@@ -20,8 +20,6 @@ namespace SipClient
     public partial class IncomingCallWindow : Window
     {
         private static SoundPlayer soundPlayer = new SoundPlayer();
-
-        public Ozeki.VoIP.DialInfo DialInfo { get; set; }
 
         public IncomingCallWindow()
         {
@@ -38,28 +36,68 @@ namespace SipClient
             this.Close();
         }
 
+        public string Name = String.Empty;
+        public string Phone = String.Empty;
+        public string Address = String.Empty;
+
+        public Ozeki.VoIP.IPhoneCall Call { get; set; }
+
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
-            //Play Sound
+            // Play Sound
             soundPlayer.Stream = Properties.Resources.signal;
-            soundPlayer.PlayLooping();  
+            soundPlayer.PlayLooping();
             // Load Inforamtion
-            this.txtCallName.Text = DialInfo.CallerDisplay;
-            this.txtPhoneNumber.Text = DialInfo.CallerID;
+            SetAttributes(Phone, Name, Address);
         }
 
         private void btnAccept_Click(object sender, RoutedEventArgs e)
         {
-            // принимаем звонок 
-            this.DialogResult = true;
-            this.Close();
+            if (soundPlayer.IsLoadCompleted)
+                soundPlayer.Stop();
+
+            if (Call.CallState == Ozeki.VoIP.CallState.LocalHeld)
+            {
+                Call.ToggleHold();
+            }
+            else
+            {
+                // принимаем звонок 
+                Call.Answer();
+            }
         }
 
         private void btnHoldOn_Click(object sender, RoutedEventArgs e)
         {
+            if (soundPlayer.IsLoadCompleted)
+                soundPlayer.Stop();
+            // Если удерживаем звонок
+            if (Call.CallState != Ozeki.VoIP.CallState.LocalHeld)
+            {
+                Call.ToggleHold();
+            }
+        }
+
+        private void btnTransferTo_Click(object sender, RoutedEventArgs e)
+        {
+            if (soundPlayer.IsLoadCompleted)
+                soundPlayer.Stop();
+            if (Call != null && Call.IsAnswered)
+            {               
+                this.Hide();
+                
+            }
+        }
+
+        private void btnReject_Click(object sender, RoutedEventArgs e)
+        {
+            if (soundPlayer.IsLoadCompleted)
+                soundPlayer.Stop();
             // отклоняем звонок 
-            this.DialogResult = false;
-            // закрываем окно
+            if (Call.IsAnswered)
+            {
+                Call.HangUp();
+            }
             this.Close();
         }
 
@@ -67,6 +105,14 @@ namespace SipClient
         {
             if (soundPlayer.IsLoadCompleted)
                 soundPlayer.Stop();
+            if (Call != null && Call.IsAnswered)
+                Call.HangUp();
+        }
+
+        internal void SetAttributes(string phone, string name, string address)
+        {
+            this.txtNameAndPhone.Text = string.Format("Имя : {0}   Телефон : {1}", name, phone);
+            this.txtAddress.Text = address;
         }
     }
 }
