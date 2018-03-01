@@ -51,6 +51,28 @@ namespace SipClient
             SetAttributes(Phone, Name, Address);
         }
 
+        private Button btnAddNewOrder;
+        /// <summary>
+        /// Добавляем кнопку на форму
+        /// </summary>
+        public void AddButtonNewOrderAvailable()
+        {
+            this.Dispatcher.Invoke((Action)(() =>
+            {
+                btnAddNewOrder = new Button();
+                btnAddNewOrder.Margin = new Thickness(5);
+                btnAddNewOrder.Click += new RoutedEventHandler(btnAddNewOrder_Click);
+                btnAddNewOrder.Content = "Создать новый заказ";
+                layoutNewOrder.Children.Add(btnAddNewOrder);
+            }));           
+        }
+
+        void btnAddNewOrder_Click(object sender, RoutedEventArgs e)
+        {
+            PhoneWindow.CreateNewOrderFlag = true;
+            PhoneWindow.SendMessageToOrders(null);
+        }
+
         private void btnAccept_Click(object sender, RoutedEventArgs e)
         {
             if (soundPlayer.IsLoadCompleted)
@@ -75,17 +97,6 @@ namespace SipClient
             if (Call.CallState != Ozeki.VoIP.CallState.LocalHeld)
             {
                 Call.ToggleHold();
-            }
-        }
-
-        private void btnTransferTo_Click(object sender, RoutedEventArgs e)
-        {
-            if (soundPlayer.IsLoadCompleted)
-                soundPlayer.Stop();
-            if (Call != null && Call.IsAnswered)
-            {               
-                this.Hide();
-                
             }
         }
 

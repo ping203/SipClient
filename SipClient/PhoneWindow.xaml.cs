@@ -78,31 +78,41 @@ namespace SipClient
         }
 
         IncomingCallWindow incCallWindow = null;
+        private static MSQ.Message lastIncomingMessage;
 
         // Обрабатываем входящее сообщение в парраллельном потоке
         private void ProcessIncomingMessage(MSQ.Message message)
         {
+            //Save link to Last message
+            lastIncomingMessage = message;
             var customer = message.CustomerInfo;
             var behaviour = message.BehaviourFlags;
+
             // Устанавливаем контекст окна с входящим звонком
             // если окно не существует
             if (incCallWindow == null)
             {
-                // Create Incoming Call Window
-                incCallWindow = new IncomingCallWindow();
-                incCallWindow.Phone = customer.PhoneNumber;
-                incCallWindow.Name = customer.Name;
-                incCallWindow.Address = customer.Addres;
-                incCallWindow.Call = call;
-
                 InvokeGUIThread(() =>
                 {
+                    // Create Incoming Call Window
+                    incCallWindow = new IncomingCallWindow();
+                    incCallWindow.Phone = customer.PhoneNumber;
+                    incCallWindow.Name = customer.Name;
+                    incCallWindow.Address = customer.Addres;
+                    incCallWindow.Call = call;
+                    if (behaviour.isFinded) // есть данные о клиенте
+                        incCallWindow.AddButtonNewOrderAvailable();
                     incCallWindow.Show();
                 });
             }
             else // если окно уже существует
             {
-                incCallWindow.SetAttributes(customer.PhoneNumber, customer.Name, customer.Addres);
+                if (behaviour.isFinded) // есть данные о клиенте
+                {
+                    incCallWindow.SetAttributes(customer.PhoneNumber, customer.Name, customer.Addres);
+                    incCallWindow.AddButtonNewOrderAvailable();
+                }
+
             }
         }
 
@@ -132,7 +142,7 @@ namespace SipClient
             catch (MessageQueueException msqex)
             {
                 MessageBox.Show(msqex.Message + Environment.NewLine + msqex.StackTrace);
-            }            
+            }
         }
 
         /// <summary>
@@ -155,17 +165,19 @@ namespace SipClient
 
         private void buttonKeyPad_MouseDown(object sender, MouseButtonEventArgs e)
         {
+            var btn = sender as Button;
+
             if (call == null)
                 return;
 
             if (!call.CallState.IsInCall())
                 return;
 
-            var btn = sender as Button;
             int dtmfSignal = GetDtmfSignalFromButtonTag(btn);
             if (dtmfSignal == -1)
                 return;
 
+            // Звуковой сигнал
             currentDtmfSignal = dtmfSignal;
             call.StartDTMFSignal((DtmfNamedEvents)dtmfSignal);
         }
@@ -178,6 +190,7 @@ namespace SipClient
             if (!call.CallState.IsInCall())
                 return;
 
+            // Звуковой сигнал
             call.StopDTMFSignal((DtmfNamedEvents)currentDtmfSignal);
         }
 
@@ -277,11 +290,11 @@ namespace SipClient
             call = incomingCall;
             SubscribeToCallEvents(call);
 
-            InvokeGUIThread(() =>
-            {
-                this.txtCallStatus.Text = "Входящий";
-                this.PhoneIcon.Source = new BitmapImage(new Uri("/SipClient;component/Resources/call-end.png", UriKind.Relative));
-            });
+            //InvokeGUIThread(() =>
+            //{
+            //    this.txtCallStatus.Text = "Входящий";
+            //    this.PhoneIcon.Source = new BitmapImage(new Uri("/SipClient;component/Resources/call-end.png", UriKind.Relative));
+            //});
 
             // Отправляем данные в Orders
             SendMessageToOrders(e.Item.DialInfo);
@@ -311,16 +324,32 @@ namespace SipClient
             });
         }
 
-        private void SendMessageToOrders(DialInfo dialInfo)
+        /// <summary>
+        /// Send message to Orders
+        /// </summary>
+        /// <param name="dialInfo">if dialInfo == null, send old message with specified parameters</param>
+        public static void SendMessageToOrders(DialInfo dialInfo)
         {
             // Формируем сообщение и отправляем его
             using (var msg = new System.Messaging.Message())
             {
                 //create message
-                MSQ.Message msq_message = new MSQ.Message();
-                msq_message.BehaviourFlags = new MSQ.Behaviour() { isFinded = false, isCreateNewOrder = false };
-                msq_message.CustomerInfo = new MSQ.Customer() { Addres = String.Empty, Name = String.Empty, PhoneNumber = dialInfo.CallerID };
-                // Create message with guaranteed delivery
+                MSQ.Message msq_message = null;
+                // use latest message
+                if (dialInfo == null && lastIncomingMessage != null)
+                {
+                    // Set new behaviour
+                    lastIncomingMessage.BehaviourFlags.isCreateNewOrder = CreateNewOrderFlag;
+                    // set link to message
+                    msq_message = lastIncomingMessage;
+                }
+                else //or create new message
+                {
+                    msq_message = new MSQ.Message();
+                    msq_message.BehaviourFlags = new MSQ.Behaviour() { isFinded = false, isCreateNewOrder = false };
+                    msq_message.CustomerInfo = new MSQ.Customer() { Addres = String.Empty, Name = String.Empty, PhoneNumber = dialInfo.CallerID };
+                }
+                // Create queue message with guaranteed delivery
                 msg.Body = msq_message;
                 msg.Recoverable = true;
                 msg.Formatter = new BinaryMessageFormatter();
@@ -347,7 +376,7 @@ namespace SipClient
 
                 mediaSender.AttachToCall(call);
                 mediaReceiver.AttachToCall(call);
-
+                
                 InvokeGUIThread(() =>
                 {
                     this.PhoneIcon.Source = new BitmapImage(new Uri("/SipClient;component/Resources/call-end.png", UriKind.Relative));
@@ -456,31 +485,53 @@ namespace SipClient
         }
 
         /// <summary>
+        /// return true if s is transfer phone number
+        /// </summary>
+        Func<string, bool> isTransferNumber = (s) => Regex.Match(s, @"^(#){1}").Success;
+
+        /// <summary>
         ///  Нажатие на кнопку соединить\ разъединить
         /// </summary>
         private void btnConnectOrReject_Click(object sender, RoutedEventArgs e)
         {
-            // accept incoming call
-            if (call != null && call.IsIncoming)
-            {
-                if (call.IsIncoming && call.CallState.IsRinging())
-                {
-                    call.Reject();
-                }
-                else
-                {
-                    call.HangUp();
-                }
+            //// accept incoming call
+            //if (call != null && call.IsIncoming)
+            //{
+            //    if (call.IsIncoming && call.CallState.IsRinging())
+            //    {
+            //        call.Reject();
+            //    }
+            //    else
+            //    {
+            //        call.HangUp();
+            //    }
 
-                call = null;
+            //    call = null;
+            //    return;
+            //}
+
+            // Если введеный номер является номер перевода -> переводим на указанный номер
+            if (isTransferNumber("#223"))
+            {
+                TransferTo("#223");
                 return;
             }
+         
+            // Вызов номера
+            CallTo(txtPhoneNumber.Text);
+        }
 
-            // dial
+        /// <summary>
+        /// Вызов номера по телефону
+        /// </summary>
+        /// <param name="phoneNumber"></param>
+        private void CallTo(string phoneNumber)
+        {
+            // Если уже есть активное соединение
             if (call != null)
                 return;
 
-            // Проверяем соединение
+            // Если соединение не активно!
             if (phoneLine.RegState != RegState.RegistrationSucceeded)
             {
                 InvokeGUIThread(() =>
@@ -489,48 +540,18 @@ namespace SipClient
                 });
                 return;
             }
-            // Выполняем набор
-            if (!String.IsNullOrEmpty(txtPhoneNumber.Text))
+
+            // Check phone number 
+            if (!IsPhoneNumber(phoneNumber) || String.IsNullOrEmpty(phoneNumber))
             {
-                var phoneNumber = txtPhoneNumber.Text;
-
-                // Check phone number 
-                if (!IsPhoneNumber(phoneNumber))
-                {
-                    MessageBox.Show(string.Concat("Неправильный телефонный номер : '", phoneNumber, "'!"));
-                    return;
-                }
-
-                // make a call to number
-                call = softPhone.CreateCallObject(phoneLine, phoneNumber);
-                SubscribeToCallEvents(call);
-                call.Start();
-            }
-        }
-
-        /// <summary>
-        /// Переадрессация входящих
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        private void btn_Transfer_Click(object sender, EventArgs e)
-        {
-            string transferTo = "1001";
-
-            if (call == null)
+                MessageBox.Show(string.Concat("Неправильный телефонный номер : '", phoneNumber, "'!"));
                 return;
+            };
 
-            if (string.IsNullOrEmpty(transferTo))
-                return;
-
-            if (call.CallState != CallState.InCall)
-                return;
-
-            call.BlindTransfer(transferTo);
-            InvokeGUIThread(() =>
-            {
-                //tb_Display.Text = "Transfering to:" + transferTo;
-            });
+            // make a call to number
+            call = softPhone.CreateCallObject(phoneLine, phoneNumber);
+            SubscribeToCallEvents(call);
+            call.Start();
         }
 
         private void btn_Hold_Click(object sender, EventArgs e)
@@ -699,6 +720,44 @@ namespace SipClient
         {
             //Login loginForm = new Login();
             //loginForm.Show();
+        }
+
+        private static bool createNewOrderFlag;
+
+        /// <summary>
+        /// Return flag and unset him
+        /// </summary>
+        public static bool CreateNewOrderFlag
+        {
+            get
+            {
+                bool oldValue = createNewOrderFlag;
+                createNewOrderFlag = false;
+                return oldValue;
+            }
+            set
+            {
+                createNewOrderFlag = value;
+            }
+        }
+
+        private void TransferTo(string transferNumber)
+        {
+            if (call == null)
+                return;
+
+            if (string.IsNullOrEmpty(transferNumber))
+                return;
+
+            if (call.CallState != CallState.InCall)
+                return;
+
+            call.BlindTransfer(transferNumber);
+
+            InvokeGUIThread(() =>
+            {
+                txtCallStatus.Text = "Трансфер на :" + transferNumber;
+            });
         }
     }
 }
