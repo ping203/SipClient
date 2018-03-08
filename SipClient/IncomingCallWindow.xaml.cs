@@ -40,8 +40,6 @@ namespace SipClient
         public string Phone = String.Empty;
         public string Address = String.Empty;
 
-        public Ozeki.VoIP.IPhoneCall Call { get; set; }
-
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
             // Play Sound
@@ -70,7 +68,7 @@ namespace SipClient
         void btnAddNewOrder_Click(object sender, RoutedEventArgs e)
         {
             PhoneWindow.CreateNewOrderFlag = true;
-            PhoneWindow.SendMessageToOrders(null);
+            //PhoneWindow.SendMessageToOrders(null);
         }
 
         private void btnAccept_Click(object sender, RoutedEventArgs e)
@@ -78,15 +76,15 @@ namespace SipClient
             if (soundPlayer.IsLoadCompleted)
                 soundPlayer.Stop();
 
-            if (Call.CallState == Ozeki.VoIP.CallState.LocalHeld)
-            {
-                Call.ToggleHold();
-            }
-            else
-            {
-                // принимаем звонок 
-                Call.Answer();
-            }
+            //if (Call.CallState == Ozeki.VoIP.CallState.LocalHeld)
+            //{
+            //    Call.ToggleHold();
+            //}
+            //else
+            //{
+            //    // принимаем звонок 
+            //    Call.Answer();
+            //}
         }
 
         private void btnHoldOn_Click(object sender, RoutedEventArgs e)
@@ -94,10 +92,10 @@ namespace SipClient
             if (soundPlayer.IsLoadCompleted)
                 soundPlayer.Stop();
             // Если удерживаем звонок
-            if (Call.CallState != Ozeki.VoIP.CallState.LocalHeld)
-            {
-                Call.ToggleHold();
-            }
+            //if (Call.CallState != Ozeki.VoIP.CallState.LocalHeld)
+            //{
+            //    Call.ToggleHold();
+            //}
         }
 
         private void btnReject_Click(object sender, RoutedEventArgs e)
@@ -105,10 +103,10 @@ namespace SipClient
             if (soundPlayer.IsLoadCompleted)
                 soundPlayer.Stop();
             // отклоняем звонок 
-            if (Call.IsAnswered)
-            {
-                Call.HangUp();
-            }
+            //if (Call.IsAnswered)
+            //{
+            //    Call.HangUp();
+            //}
             this.Close();
         }
 
@@ -116,8 +114,8 @@ namespace SipClient
         {
             if (soundPlayer.IsLoadCompleted)
                 soundPlayer.Stop();
-            if (Call != null && Call.IsAnswered)
-                Call.HangUp();
+            //if (Call != null && Call.IsAnswered)
+            //    Call.HangUp();
         }
 
         internal void SetAttributes(string phone, string name, string address)

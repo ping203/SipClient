@@ -85,6 +85,7 @@ namespace SipClient
             PhoneWindow phoneWindow = new PhoneWindow();
             phoneWindow.Login = login;
             phoneWindow.Password = password;
+            phoneWindow.Host = host;
             phoneWindow.Show();
             // hide Login Window
             this.Hide();

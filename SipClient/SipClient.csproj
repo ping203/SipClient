@@ -10,9 +10,8 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>SipClient</RootNamespace>
     <AssemblyName>SipClient</AssemblyName>
-    <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
-    <TargetFrameworkProfile>
-    </TargetFrameworkProfile>
+    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
+    <TargetFrameworkProfile>Client</TargetFrameworkProfile>
     <FileAlignment>512</FileAlignment>
     <ProjectTypeGuids>{60dc8134-eba5-43b8-bcc9-bb4bc16c2548};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
     <WarningLevel>4</WarningLevel>
@@ -60,22 +59,23 @@
     <StartupObject>SipClient.App</StartupObject>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="MSQ, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\..\dev\MSQ\bin\Debug\MSQ.dll</HintPath>
+    </Reference>
     <Reference Include="NVA">
       <HintPath>..\..\SDK\NVA.dll</HintPath>
     </Reference>
-    <Reference Include="SLClientSDK">
-      <HintPath>..\..\SDK\SLClientSDK.dll</HintPath>
+    <Reference Include="sipdotnet">
+      <HintPath>..\..\sipdotnet\bin\Debug\sipdotnet.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Data" />
     <Reference Include="System.Drawing" />
     <Reference Include="System.Messaging" />
+    <Reference Include="System.Xaml" />
     <Reference Include="System.Xml" />
     <Reference Include="System.Core" />
     <Reference Include="System.Xml.Linq" />
-    <Reference Include="VoIPSDK">
-      <HintPath>..\..\SDK\VoIPSDK.dll</HintPath>
-    </Reference>
     <Reference Include="WindowsBase" />
     <Reference Include="PresentationCore" />
     <Reference Include="PresentationFramework" />
@@ -114,7 +114,6 @@
     <Compile Include="SettingsWindow.xaml.cs">
       <DependentUpon>SettingsWindow.xaml</DependentUpon>
     </Compile>
-    <Compile Include="Classes\Softphone.cs" />
     <Compile Include="IncomingCallWindow.xaml.cs">
       <DependentUpon>IncomingCallWindow.xaml</DependentUpon>
     </Compile>
@@ -199,10 +198,7 @@
     </BootstrapperPackage>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\dev\MSQ\MSQ.csproj">
-      <Project>{1DC1E422-944D-4A86-8FDB-6710EEE44B1D}</Project>
-      <Name>MSQ</Name>
-    </ProjectReference>
+    <Folder Include="Classes\" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

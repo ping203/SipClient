@@ -10,12 +10,9 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Threading;
-using Ozeki.Media;
-using Ozeki.Media.MediaHandlers;
-using Ozeki.VoIP;
-using Ozeki.VoIP.SDK;
 using System.Messaging;
 using System.Runtime.Serialization.Formatters.Binary;
+using sipdotnet;
 
 namespace SipClient
 {
@@ -24,18 +21,13 @@ namespace SipClient
     /// </summary>
     public partial class PhoneWindow : Window
     {
-        ISoftPhone softPhone;
-        IPhoneLine phoneLine;
-        IPhoneCall call;
-        private Microphone microphone = Microphone.GetDefaultDevice();
-        private Speaker speaker = Speaker.GetDefaultDevice();
-        MediaConnector connector = new MediaConnector();
-        PhoneCallAudioSender mediaSender = new PhoneCallAudioSender();
-        PhoneCallAudioReceiver mediaReceiver = new PhoneCallAudioReceiver();
-        int currentDtmfSignal;
+        private Phone softphone;
+        private Account account;
+        private Call call;
 
         private const string _PHONE_NUMBER_HELP = "Введите номер";
 
+        // Message Queue
         private static MessageQueue SipClientQueue;
         private static MessageQueue OrdersQueue;
 
@@ -49,35 +41,29 @@ namespace SipClient
 
         void Window_Loaded(object sender, RoutedEventArgs e)
         {
-            microphone = Microphone.GetDefaultDevice();
-            speaker = Speaker.GetDefaultDevice();
-            connector = new MediaConnector();
-            mediaSender = new PhoneCallAudioSender();
-            mediaReceiver = new PhoneCallAudioReceiver();
-
-            speaker.Volume = (float)volumeSlider.Value;
-
-            miUsername.Header = Login;
-
-            // Запускаем иниицализацию в параллельном потоке
+            // Инициализиурем подключение к телефону
             ThreadPool.QueueUserWorkItem(InitializeSoftphone);
-
-            //Инициализиурем погдключение к очереди сообщений
-            try
+            // Инициализиурем подключение к очереди сообщений
+            ThreadPool.QueueUserWorkItem((state) =>
             {
-                SipClientQueue = MSQ.MessageQueueFactory.GetSipClientQueue;
-                OrdersQueue = MSQ.MessageQueueFactory.GetOrdersQueue;
+                try
+                {
+                    SipClientQueue = MSQ.MessageQueueFactory.GetSipClientQueue;
+                    OrdersQueue = MSQ.MessageQueueFactory.GetOrdersQueue;
 
-                OrdersQueue.ReceiveCompleted += new ReceiveCompletedEventHandler(OrdersQueue_ReceiveCompleted);
-                OrdersQueue.BeginReceive();
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message);
-            }
+                    OrdersQueue.ReceiveCompleted += new ReceiveCompletedEventHandler(OrdersQueue_ReceiveCompleted);
+                    OrdersQueue.BeginReceive();
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show(ex.Message);
+                }
+            });
+            // Set Fields
+            miUsername.Header = Login;
         }
 
-        IncomingCallWindow incCallWindow = null;
+        private IncomingCallWindow incCallWindow = null;
         private static MSQ.Message lastIncomingMessage;
 
         // Обрабатываем входящее сообщение в парраллельном потоке
@@ -99,7 +85,7 @@ namespace SipClient
                     incCallWindow.Phone = customer.PhoneNumber;
                     incCallWindow.Name = customer.Name;
                     incCallWindow.Address = customer.Addres;
-                    incCallWindow.Call = call;
+                    //incCallWindow.Call = call;
                     if (behaviour.isFinded) // есть данные о клиенте
                         incCallWindow.AddButtonNewOrderAvailable();
                     incCallWindow.Show();
@@ -112,7 +98,6 @@ namespace SipClient
                     incCallWindow.SetAttributes(customer.PhoneNumber, customer.Name, customer.Addres);
                     incCallWindow.AddButtonNewOrderAvailable();
                 }
-
             }
         }
 
@@ -145,85 +130,22 @@ namespace SipClient
             }
         }
 
-        /// <summary>
-        /// If there is a call in progress it sends a DTMF signal according to the RFC 2833 standard else it makes the dialing number.
-        /// </summary>
-        private void buttonKeyPadButton_Click(object sender, RoutedEventArgs e)
-        {
-            var btn = sender as Button;
-            if (btn == null)
-                return;
-
-            if (call != null)
-                return;
-
-            if (txtPhoneNumber.Text.Equals(_PHONE_NUMBER_HELP))
-                txtPhoneNumber.Text = String.Empty;
-
-            txtPhoneNumber.Text += btn.Content.ToString().Trim();
-        }
-
-        private void buttonKeyPad_MouseDown(object sender, MouseButtonEventArgs e)
-        {
-            var btn = sender as Button;
-
-            if (call == null)
-                return;
-
-            if (!call.CallState.IsInCall())
-                return;
-
-            int dtmfSignal = GetDtmfSignalFromButtonTag(btn);
-            if (dtmfSignal == -1)
-                return;
-
-            // Звуковой сигнал
-            currentDtmfSignal = dtmfSignal;
-            call.StartDTMFSignal((DtmfNamedEvents)dtmfSignal);
-        }
-
-        private void buttonKeyPad_MouseUp(object sender, MouseButtonEventArgs e)
-        {
-            if (call == null)
-                return;
-
-            if (!call.CallState.IsInCall())
-                return;
-
-            // Звуковой сигнал
-            call.StopDTMFSignal((DtmfNamedEvents)currentDtmfSignal);
-        }
-
-        private int GetDtmfSignalFromButtonTag(Button button)
-        {
-            if (button == null)
-                return -1;
-
-            if (button.Tag == null)
-                return -1;
-
-            int signal;
-            if (int.TryParse(button.Tag.ToString(), out signal))
-                return signal;
-
-            return -1;
-        }
-
         private void InitializeSoftphone(object state)
         {
             try
             {
-                softPhone = SoftPhoneFactory.CreateSoftPhone(SoftPhoneFactory.GetLocalIP(), 10000, 20000);
+                account = new Account(Login, Password, Host);
+                softphone = new Phone(account);
+                // Add Events
+                softphone.ErrorEvent += new Phone.OnError(softphone_ErrorEvent);
+                softphone.IncomingCallEvent += new Phone.OnIncomingCall(softphone_IncomingCallEvent);
+                softphone.PhoneConnectedEvent += new Phone.OnPhoneConnected(softphone_PhoneConnectedEvent);
+                softphone.PhoneDisconnectedEvent += new Phone.OnPhoneDisconnected(softphone_PhoneDisconnectedEvent);
+                softphone.CallActiveEvent += new Phone.OnCallActive(softphone_CallActiveEvent);
+                softphone.CallCompletedEvent += new Phone.OnCallCompleted(softphone_CallCompletedEvent);
 
-                phoneLine = softPhone.CreatePhoneLine(new SIPAccount(true, Login, Login, Login, Password, "192.168.0.5"));
-
-                phoneLine.RegistrationStateChanged += phoneLine_RegistrationStateChanged;
-
-                softPhone.IncomingCall += _softPhone_IncomingCall;
-
-                softPhone.RegisterPhoneLine(phoneLine);
-
-                ConnectMedia();
+                //Connect to server
+                softphone.Connect();
             }
             catch (Exception ex)
             {
@@ -231,40 +153,114 @@ namespace SipClient
             }
         }
 
-        /// <summary>
-        /// Connects the microphone and speaker to the call sender and receiver.
-        /// </summary>
-        private void ConnectMedia()
+        private void softphone_CallCompletedEvent(Call call)
         {
-            if (speaker != null)
-                connector.Connect(mediaReceiver, speaker);
-
-            if (microphone != null)
-                connector.Connect(microphone, mediaSender);
+            InvokeGUIThread(() =>
+                {
+                    txtPhoneNumber.Text = String.Empty;
+                    txtCallStatus.Text = "Готов";
+                    this.PhoneIcon.Source = new BitmapImage(new Uri("/SipClient;component/Resources/telephone.png", UriKind.Relative));
+                });
         }
 
-        // Обработка изменения состояния соединения с сервером
-        private void phoneLine_RegistrationStateChanged(object sender, RegistrationStateChangedArgs e)
+        private void softphone_CallActiveEvent(Call call)
         {
-            if (e.State == RegState.Error || e.State == RegState.NotRegistered)
+            InvokeGUIThread(() =>
             {
-                InvokeGUIThread(() =>
+                this.txtCallStatus.Text = "Входящий";
+                this.PhoneIcon.Source = new BitmapImage(new Uri("/SipClient;component/Resources/call-end.png", UriKind.Relative));
+            });
+        }
+
+        private void softphone_PhoneDisconnectedEvent()
+        {
+            InvokeGUIThread(() =>
+            {
+                //set unavailable icon and text message
+                this.StatusIcon.Source = new BitmapImage(new Uri("/SipClient;component/Resources/inactive.png", UriKind.Relative));
+                txtConnectionStatus.Text = "Нет подключения!";
+            });
+        }
+
+        private void softphone_PhoneConnectedEvent()
+        {
+            InvokeGUIThread(() =>
+            {
+                //set available icon and text message
+                this.PhoneIcon.Source = new BitmapImage(new Uri("/SipClient;component/Resources/telephone.png", UriKind.Relative));
+                this.StatusIcon.Source = new BitmapImage(new Uri("/SipClient;component/Resources/active.png", UriKind.Relative));
+                txtConnectionStatus.Text = "Подключен!";
+            });
+        }
+
+        private void softphone_IncomingCallEvent(Call call)
+        {
+            this.call = call;
+
+            ThreadPool.QueueUserWorkItem((object state) =>
+            {
+                Timer timer = new Timer((object state1) =>
+                {
+                    if (this.call != null)
+                    {
+                        if (this.call.GetCallType() == Call.CallType.Incoming && incCallWindow == null)
+                        {
+                            InvokeGUIThread(() =>
+                            {
+                                // Create new incoming window
+                                incCallWindow = new IncomingCallWindow();
+                                incCallWindow.Phone = GetPhone(this.call.GetFrom());
+                                incCallWindow.Name = GetCallId(this.call.GetFrom());
+                                incCallWindow.Show();
+                            });
+                        }
+                    }
+                }, null, 200, 0);
+            });
+        }
+
+        private Func<string, string> GetCallId = (string sip) => Regex.Match(sip,@"[\\""](\w+)[\\""]").Groups[1].Value;
+        private Func<string, string> GetPhone = (string sip) => Regex.Match(sip, @"sip:(\d+)@").Groups[1].Value;
+
+        private void softphone_ErrorEvent(Call call, Phone.Error error)
+        {
+            switch (error)
+            {
+                case Phone.Error.CallError:
+                    InvokeGUIThread(() =>
+                    {
+                        txtCallStatus.Text = "Ошибка вызова!";
+                    });
+                    break;
+                case Phone.Error.LineIsBusyError:
+                    InvokeGUIThread(() =>
+                    {
+                        txtCallStatus.Text = "Линия занята!";
+                    });
+                    break;
+                case Phone.Error.OrderError:
+                    {
+
+                    }
+                    break;
+                case Phone.Error.RegisterFailed:
+                    {
+                        InvokeGUIThread(() =>
                 {
                     //set unavailable icon and text message
-                    var source = new Uri("/SipClient;component/Resources/inactive.png", UriKind.Relative);
-                    this.StatusIcon.Source = new BitmapImage(source);
+                    this.StatusIcon.Source = new BitmapImage(new Uri("/SipClient;component/Resources/inactive.png", UriKind.Relative));
                     txtConnectionStatus.Text = "Нет подключения!";
                 });
-            }
-            else if (e.State == RegState.RegistrationSucceeded) // Online!
-            {
-                InvokeGUIThread(() =>
-                {
-                    //set available icon and text message
-                    this.PhoneIcon.Source = new BitmapImage(new Uri("/SipClient;component/Resources/telephone.png", UriKind.Relative));
-                    this.StatusIcon.Source = new BitmapImage(new Uri("/SipClient;component/Resources/active.png", UriKind.Relative));
-                    txtConnectionStatus.Text = "Подключен!";
-                });
+                    }
+                    break;
+                case Phone.Error.UnknownError:
+                    {
+                        InvokeGUIThread(() =>
+                        {
+                            txtCallStatus.Text = "Неизвестная ошибка!";
+                        });
+                    }
+                    break;
             }
         }
 
@@ -274,159 +270,38 @@ namespace SipClient
             return Regex.Match(number, @"^((\+7|7|8)+([0-9]){4})?([0-9]{3})?([0-9]{3})$").Success;
         }
 
-        // Обработка входящего звонка
-        private void _softPhone_IncomingCall(object sender, VoIPEventArgs<IPhoneCall> e)
-        {
-            // Выводим инфу о звонящем
-            var incomingCall = e.Item as IPhoneCall;
-
-            // Отклоняем входящие звонки при наличии активного соединения
-            if (call != null)
-            {
-                incomingCall.Reject();
-                return;
-            }
-
-            call = incomingCall;
-            SubscribeToCallEvents(call);
-
-            //InvokeGUIThread(() =>
-            //{
-            //    this.txtCallStatus.Text = "Входящий";
-            //    this.PhoneIcon.Source = new BitmapImage(new Uri("/SipClient;component/Resources/call-end.png", UriKind.Relative));
-            //});
-
-            // Отправляем данные в Orders
-            SendMessageToOrders(e.Item.DialInfo);
-
-            // Проверяем возвращение сообщения от Orders
-            // Если сообщение идет более 2 секунд - создаем окно входящего звонка
-            ThreadPool.QueueUserWorkItem((object state) =>
-            {
-                Timer timer = new Timer((object state1) =>
-                {
-                    if (call != null)
-                    {
-                        if (call.IsIncoming && incCallWindow == null)
-                        {
-                            InvokeGUIThread(() =>
-                            {
-                                // Create new incoming window
-                                incCallWindow = new IncomingCallWindow();
-                                incCallWindow.Phone = e.Item.DialInfo.CallerID;
-                                incCallWindow.Name = e.Item.DialInfo.CallerDisplay;
-                                incCallWindow.Call = call;
-                                incCallWindow.Show();
-                            });
-                        }
-                    }
-                }, null, 1000, 0);
-            });
-        }
-
         /// <summary>
         /// Send message to Orders
         /// </summary>
         /// <param name="dialInfo">if dialInfo == null, send old message with specified parameters</param>
-        public static void SendMessageToOrders(DialInfo dialInfo)
+        public static void SendMessageToOrders()
         {
-            // Формируем сообщение и отправляем его
-            using (var msg = new System.Messaging.Message())
-            {
-                //create message
-                MSQ.Message msq_message = null;
-                // use latest message
-                if (dialInfo == null && lastIncomingMessage != null)
-                {
-                    // Set new behaviour
-                    lastIncomingMessage.BehaviourFlags.isCreateNewOrder = CreateNewOrderFlag;
-                    // set link to message
-                    msq_message = lastIncomingMessage;
-                }
-                else //or create new message
-                {
-                    msq_message = new MSQ.Message();
-                    msq_message.BehaviourFlags = new MSQ.Behaviour() { isFinded = false, isCreateNewOrder = false };
-                    msq_message.CustomerInfo = new MSQ.Customer() { Addres = String.Empty, Name = String.Empty, PhoneNumber = dialInfo.CallerID };
-                }
-                // Create queue message with guaranteed delivery
-                msg.Body = msq_message;
-                msg.Recoverable = true;
-                msg.Formatter = new BinaryMessageFormatter();
-                // Send to sipClient queue
-                SipClientQueue.Send(msg);
-            }
-        }
-
-        // Вызов события изменения состояния звонка
-        private void call_CallStateChanged(object sender, CallStateChangedArgs e)
-        {
-            InvokeGUIThread(() =>
-            {
-                txtCallStatus.Text = e.State.ToString();
-            });
-
-            if (e.State == CallState.Answered) // звонок принят
-            {
-                if (microphone != null)
-                    microphone.Start();
-
-                if (speaker != null)
-                    speaker.Start();
-
-                mediaSender.AttachToCall(call);
-                mediaReceiver.AttachToCall(call);
-                
-                InvokeGUIThread(() =>
-                {
-                    this.PhoneIcon.Source = new BitmapImage(new Uri("/SipClient;component/Resources/call-end.png", UriKind.Relative));
-                });
-            }
-
-            if (e.State.IsCallEnded()) // звонок окончен
-            {
-                if (microphone != null)
-                    microphone.Stop();
-
-                if (speaker != null)
-                    speaker.Stop();
-
-                mediaSender.Detach();
-                mediaReceiver.Detach();
-
-                UnsubscribeFromCallEvents(sender as IPhoneCall);
-                call = null;
-
-                InvokeGUIThread(() =>
-                {
-                    txtPhoneNumber.Text = String.Empty;
-                    txtCallStatus.Text = "Готов";
-                    this.PhoneIcon.Source = new BitmapImage(new Uri("/SipClient;component/Resources/telephone.png", UriKind.Relative));
-                });
-
-                //Закрываем окно с входящим звонком
-                InvokeGUIThread(() =>
-                {
-                    if (incCallWindow != null && incCallWindow.IsEnabled)
-                    {
-                        incCallWindow.Close();
-
-                        incCallWindow = null;
-                    };
-                });
-            }
-        }
-
-        /// <summary>
-        /// Unsubscribes from the necessary events of a call transact.
-        /// </summary>
-        private void UnsubscribeFromCallEvents(IPhoneCall call)
-        {
-            if (call == null)
-                return;
-
-            call.CallStateChanged -= (call_CallStateChanged);
-            call.DtmfReceived -= (call_DtmfReceived);
+            //Формируем сообщение и отправляем его
+            //using (var msg = new System.Messaging.Message())
+            //{
+            //    //create message
+            //    MSQ.Message msq_message = null;
+            //    //use latest message
+            //    if (dialInfo == null && lastIncomingMessage != null)
+            //    {
+            //        //Set new behaviour
+            //        lastIncomingMessage.BehaviourFlags.isCreateNewOrder = CreateNewOrderFlag;
+            //        //set link to message
+            //        msq_message = lastIncomingMessage;
+            //    }
+            //    else //or create new message
+            //    {
+            //        msq_message = new MSQ.Message();
+            //        msq_message.BehaviourFlags = new MSQ.Behaviour() { isFinded = false, isCreateNewOrder = false };
+            //        msq_message.CustomerInfo = new MSQ.Customer() { Addres = String.Empty, Name = String.Empty, PhoneNumber = dialInfo.CallerID };
+            //    }
+            //    //Create queue message with guaranteed delivery
+            //    msg.Body = msq_message;
+            //    msg.Recoverable = true;
+            //    msg.Formatter = new BinaryMessageFormatter();
+            //    //Send to sipClient queue
+            //    SipClientQueue.Send(msg);
+            //}
         }
 
         /// <summary>
@@ -437,9 +312,6 @@ namespace SipClient
         private void btnActionClick(object sender, EventArgs e)
         {
             var btn = sender as Button;
-
-            if (call != null)
-                return;
 
             if (btn == null)
                 return;
@@ -460,30 +332,6 @@ namespace SipClient
             Dispatcher.Invoke(action, null);
         }
 
-
-        /// <summary>
-        /// Subscribes to the necessary events of a call transact.
-        /// </summary>
-        private void SubscribeToCallEvents(IPhoneCall call)
-        {
-            if (call == null)
-                return;
-
-            call.CallStateChanged += (call_CallStateChanged);
-            call.DtmfReceived += (call_DtmfReceived);
-        }
-
-        /// <summary>
-        /// Display DTMF signals.
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        private void call_DtmfReceived(object sender, VoIPEventArgs<DtmfInfo> e)
-        {
-            DtmfSignal signal = e.Item.Signal;
-            InvokeGUIThread(() => txtCallStatus.Text = String.Format("DTMF : {0} ", signal.Signal));
-        }
-
         /// <summary>
         /// return true if s is transfer phone number
         /// </summary>
@@ -494,31 +342,32 @@ namespace SipClient
         /// </summary>
         private void btnConnectOrReject_Click(object sender, RoutedEventArgs e)
         {
-            //// accept incoming call
-            //if (call != null && call.IsIncoming)
-            //{
-            //    if (call.IsIncoming && call.CallState.IsRinging())
-            //    {
-            //        call.Reject();
-            //    }
-            //    else
-            //    {
-            //        call.HangUp();
-            //    }
-
-            //    call = null;
-            //    return;
-            //}
-
-            // Если введеный номер является номер перевода -> переводим на указанный номер
-            if (isTransferNumber("#223"))
+            switch (softphone.CurrentLineState)
             {
-                TransferTo("#223");
-                return;
+                case Phone.LineState.Busy:
+                    {
+                        // Если введеный номер является номер перевода -> переводим на указанный номер
+                        if (isTransferNumber(txtPhoneNumber.Text))
+                        {
+                            string number = txtPhoneNumber.Text.Remove(0, 1); // remove '#'
+                            TransferTo(number);
+                            return;
+                        }
+                        // Разрываем активное соединение
+                        else if (this.call != null )
+                        {
+                            softphone.TerminateCall(call);
+                        }
+                    }
+                    break;
+                case Phone.LineState.Free:
+                    {
+                        // Вызов номера
+                        string phoneNumber = txtPhoneNumber.Text;
+                        CallTo(phoneNumber);
+                    }
+                    break;
             }
-         
-            // Вызов номера
-            CallTo(txtPhoneNumber.Text);
         }
 
         /// <summary>
@@ -527,37 +376,19 @@ namespace SipClient
         /// <param name="phoneNumber"></param>
         private void CallTo(string phoneNumber)
         {
-            // Если уже есть активное соединение
-            if (call != null)
-                return;
-
-            // Если соединение не активно!
-            if (phoneLine.RegState != RegState.RegistrationSucceeded)
-            {
-                InvokeGUIThread(() =>
-                {
-                    MessageBox.Show("Клиент оффлайн. Звонок не возможен!");
-                });
-                return;
-            }
-
             // Check phone number 
             if (!IsPhoneNumber(phoneNumber) || String.IsNullOrEmpty(phoneNumber))
             {
                 MessageBox.Show(string.Concat("Неправильный телефонный номер : '", phoneNumber, "'!"));
                 return;
-            };
-
+            }
             // make a call to number
-            call = softPhone.CreateCallObject(phoneLine, phoneNumber);
-            SubscribeToCallEvents(call);
-            call.Start();
+            softphone.MakeCall(phoneNumber);
         }
 
         private void btn_Hold_Click(object sender, EventArgs e)
         {
-            if (call != null)
-                call.ToggleHold();
+
         }
 
         // изменение ползунка с громкостью
@@ -580,7 +411,7 @@ namespace SipClient
                     this.SoundIcon.Source = new BitmapImage(source);
                 });
             }
-            speaker.Volume = (float)volumeSlider.Value;
+            //speaker.Volume = (float)volumeSlider.Value;
         }
 
         private void txtPhoneNumber_GotFocus(object sender, RoutedEventArgs e)
@@ -613,8 +444,8 @@ namespace SipClient
 
         private void Window_Closing(object sender, CancelEventArgs e)
         {
-            DisconnectMedia();
-            softPhone.Close();
+            //DisconnectMedia();
+            //softPhone.Close();
         }
 
         private void Window_KeyDown(object sender, KeyEventArgs e)
@@ -681,22 +512,9 @@ namespace SipClient
 
         private void btnCloseClick(object sender, RoutedEventArgs e)
         {
-            DisconnectMedia();
             App.Current.Shutdown();
             SipClientQueue.Close();
             OrdersQueue.Close();
-        }
-
-        /// <summary>
-        /// Disconnects the microphone and speaker from the call sender and receiver.
-        /// </summary>
-        private void DisconnectMedia()
-        {
-            if (speaker != null)
-                connector.Disconnect(mediaReceiver, speaker);
-
-            if (microphone != null)
-                connector.Disconnect(microphone, mediaSender);
         }
 
         private void Window_MouseDown(object sender, MouseButtonEventArgs e)
@@ -705,22 +523,8 @@ namespace SipClient
         }
 
         public string Login { get; set; }
-
+        public string Host { get; set; }
         public string Password { get; set; }
-
-        // Open Call Statistic
-        private void miUsername_Click(object sender, RoutedEventArgs e)
-        {
-            //CallStat callStatistic = new CallStat();
-            //callStatistic.Show();
-        }
-
-        // Open Login Form
-        private void Login_Click(object sender, RoutedEventArgs e)
-        {
-            //Login loginForm = new Login();
-            //loginForm.Show();
-        }
 
         private static bool createNewOrderFlag;
 
@@ -743,21 +547,65 @@ namespace SipClient
 
         private void TransferTo(string transferNumber)
         {
-            if (call == null)
-                return;
-
+            // Если введеный номер не правильный -> выход
             if (string.IsNullOrEmpty(transferNumber))
                 return;
 
-            if (call.CallState != CallState.InCall)
+            // Если звонок не принят
+            //if (call.CallState != CallState.InCall)
+            //    return;
+
+            //call.BlindTransfer(transferNumber);
+
+            //InvokeGUIThread(() =>
+            //{
+            //    txtCallStatus.Text = "Трансфер на :" + transferNumber;
+            //});
+        }
+
+        private void buttonKeyPadButton_Click(object sender, RoutedEventArgs e)
+        {
+            var btn = sender as Button;
+
+            if (btn == null)
                 return;
 
-            call.BlindTransfer(transferNumber);
+            if (call == null && btn.Content.Equals('#')) return;
 
-            InvokeGUIThread(() =>
+            //Вводим номер для перевода
+            bool transferFlag = (isTransferNumber(txtPhoneNumber.Text) || btn.Content.Equals("#"));
+            if (transferFlag)
             {
-                txtCallStatus.Text = "Трансфер на :" + transferNumber;
-            });
+                InvokeGUIThread(() =>
+                {
+                    txtCallStatus.Text = "Трансфер на..";
+                    this.PhoneIcon.Source = new BitmapImage(new Uri("/SipClient;component/Resources/telephone.png", UriKind.Relative));
+                });
+            }
+
+            if (call != null && !transferFlag)
+                return;
+
+            if (txtPhoneNumber.Text.Equals(_PHONE_NUMBER_HELP))
+                txtPhoneNumber.Text = String.Empty;
+
+            // Добавим символ с кнокпки
+            txtPhoneNumber.Text += btn.Content.ToString().Trim();
+        }
+
+        private int GetDtmfSignalFromButtonTag(Button button)
+        {
+            if (button == null)
+                return -1;
+
+            if (button.Tag == null)
+                return -1;
+
+            int signal;
+            if (int.TryParse(button.Tag.ToString(), out signal))
+                return signal;
+
+            return -1;
         }
     }
 }

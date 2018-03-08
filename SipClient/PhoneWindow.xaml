@@ -24,7 +24,7 @@
             <!--Menu-->
             <Menu VerticalAlignment="Top" HorizontalAlignment="Left" Background="{x:Null}">
                 <!-- Login menu -->
-                <MenuItem Height="24" Width="24" HorizontalAlignment="Left" Click="Login_Click">
+                <MenuItem Height="24" Width="24" HorizontalAlignment="Left">
                     <MenuItem.Icon>
                         <Image Source="/SipClient;component/Resources/key.png"/>
                     </MenuItem.Icon>
@@ -32,7 +32,7 @@
             </Menu>
             <Menu VerticalAlignment="Top" HorizontalAlignment="Center" Background="{x:Null}">
                 <!--Username-->
-                <MenuItem x:Name="miUsername" Click="miUsername_Click" FontSize="14" FontWeight="Medium"  Header="username" Height="24" Width="100"/>
+                <MenuItem x:Name="miUsername" FontSize="14" FontWeight="Medium"  Header="username" Height="24" Width="100"/>
             </Menu>
             <Menu VerticalAlignment="Top" HorizontalAlignment="Right" Background="{x:Null}">
                 <!-- right button set -->
@@ -109,18 +109,18 @@
                                     <Image Name="PhoneIcon" Source="/SipClient;component/Resources/call-end.png"/>
                                 </ContentControl>
                             </Button>
-                            <Button Grid.Row="1" Grid.Column="0" BorderBrush="#979797" BorderThickness="1" Tag="1" Click="buttonKeyPadButton_Click" PreviewMouseDown="buttonKeyPad_MouseDown" PreviewMouseUp="buttonKeyPad_MouseUp" Content="1" FontSize="18" ></Button>
-                            <Button Grid.Row="1" Grid.Column="1" BorderBrush="#979797" BorderThickness="1" Tag="2" Click="buttonKeyPadButton_Click" PreviewMouseDown="buttonKeyPad_MouseDown" PreviewMouseUp="buttonKeyPad_MouseUp" Content="2" FontSize="18" ></Button>
-                            <Button Grid.Row="1" Grid.Column="2" BorderBrush="#979797" BorderThickness="1" Tag="3" Click="buttonKeyPadButton_Click" PreviewMouseDown="buttonKeyPad_MouseDown" PreviewMouseUp="buttonKeyPad_MouseUp" Content="3" FontSize="18" ></Button>
-                            <Button Grid.Row="2" Grid.Column="0" BorderBrush="#979797" BorderThickness="1" Tag="4" Click="buttonKeyPadButton_Click" PreviewMouseDown="buttonKeyPad_MouseDown" PreviewMouseUp="buttonKeyPad_MouseUp" Content="4" FontSize="18" ></Button>
-                            <Button Grid.Row="2" Grid.Column="1" BorderBrush="#979797" BorderThickness="1" Tag="5" Click="buttonKeyPadButton_Click" PreviewMouseDown="buttonKeyPad_MouseDown" PreviewMouseUp="buttonKeyPad_MouseUp" Content="5" FontSize="18" ></Button>
-                            <Button Grid.Row="2" Grid.Column="2" BorderBrush="#979797" BorderThickness="1" Tag="6" Click="buttonKeyPadButton_Click" PreviewMouseDown="buttonKeyPad_MouseDown" PreviewMouseUp="buttonKeyPad_MouseUp" Content="6" FontSize="18" ></Button>
-                            <Button Grid.Row="3" Grid.Column="0" BorderBrush="#979797" BorderThickness="1" Tag="7" Click="buttonKeyPadButton_Click" PreviewMouseDown="buttonKeyPad_MouseDown" PreviewMouseUp="buttonKeyPad_MouseUp" Content="7" FontSize="18" ></Button>
-                            <Button Grid.Row="3" Grid.Column="1" BorderBrush="#979797" BorderThickness="1" Tag="8" Click="buttonKeyPadButton_Click" PreviewMouseDown="buttonKeyPad_MouseDown" PreviewMouseUp="buttonKeyPad_MouseUp" Content="8" FontSize="18" ></Button>
-                            <Button Grid.Row="3" Grid.Column="2" BorderBrush="#979797" BorderThickness="1" Tag="9" Click="buttonKeyPadButton_Click" PreviewMouseDown="buttonKeyPad_MouseDown" PreviewMouseUp="buttonKeyPad_MouseUp" Content="9" FontSize="18" ></Button>
-                            <Button Grid.Row="4" Grid.Column="0" BorderBrush="#979797" BorderThickness="1" Tag="*" Click="buttonKeyPadButton_Click" PreviewMouseDown="buttonKeyPad_MouseDown" PreviewMouseUp="buttonKeyPad_MouseUp" Content="*" FontSize="22" ></Button>
-                            <Button Grid.Row="4" Grid.Column="1" BorderBrush="#979797" BorderThickness="1" Tag="0" Click="buttonKeyPadButton_Click" PreviewMouseDown="buttonKeyPad_MouseDown" PreviewMouseUp="buttonKeyPad_MouseUp" Content="0" FontSize="18" ></Button>
-                            <Button Grid.Row="4" Grid.Column="2" BorderBrush="#979797" BorderThickness="1" Tag="#" Click="buttonKeyPadButton_Click" PreviewMouseDown="buttonKeyPad_MouseDown" PreviewMouseUp="buttonKeyPad_MouseUp" Content="#" FontSize="18" ></Button>
+                            <Button Grid.Row="1" Grid.Column="0" BorderBrush="#979797" BorderThickness="1" Tag="1" Click="buttonKeyPadButton_Click" Content="1" FontSize="18" ></Button>
+                            <Button Grid.Row="1" Grid.Column="1" BorderBrush="#979797" BorderThickness="1" Tag="2" Click="buttonKeyPadButton_Click" Content="2" FontSize="18" ></Button>
+                            <Button Grid.Row="1" Grid.Column="2" BorderBrush="#979797" BorderThickness="1" Tag="3" Click="buttonKeyPadButton_Click" Content="3" FontSize="18" ></Button>
+                            <Button Grid.Row="2" Grid.Column="0" BorderBrush="#979797" BorderThickness="1" Tag="4" Click="buttonKeyPadButton_Click" Content="4" FontSize="18" ></Button>
+                            <Button Grid.Row="2" Grid.Column="1" BorderBrush="#979797" BorderThickness="1" Tag="5" Click="buttonKeyPadButton_Click" Content="5" FontSize="18" ></Button>
+                            <Button Grid.Row="2" Grid.Column="2" BorderBrush="#979797" BorderThickness="1" Tag="6" Click="buttonKeyPadButton_Click" Content="6" FontSize="18" ></Button>
+                            <Button Grid.Row="3" Grid.Column="0" BorderBrush="#979797" BorderThickness="1" Tag="7" Click="buttonKeyPadButton_Click" Content="7" FontSize="18" ></Button>
+                            <Button Grid.Row="3" Grid.Column="1" BorderBrush="#979797" BorderThickness="1" Tag="8" Click="buttonKeyPadButton_Click" Content="8" FontSize="18" ></Button>
+                            <Button Grid.Row="3" Grid.Column="2" BorderBrush="#979797" BorderThickness="1" Tag="9" Click="buttonKeyPadButton_Click" Content="9" FontSize="18" ></Button>
+                            <Button Grid.Row="4" Grid.Column="0" BorderBrush="#979797" BorderThickness="1" Tag="*" Click="buttonKeyPadButton_Click" Content="*" FontSize="22" ></Button>
+                            <Button Grid.Row="4" Grid.Column="1" BorderBrush="#979797" BorderThickness="1" Tag="0" Click="buttonKeyPadButton_Click" Content="0" FontSize="18" ></Button>
+                            <Button Grid.Row="4" Grid.Column="2" BorderBrush="#979797" BorderThickness="1" Tag="#" Click="buttonKeyPadButton_Click" Content="#" FontSize="18" ></Button>
                         </Grid>
                     </Border>
                 </Grid>
