@@ -87,8 +87,8 @@ namespace SipClient
             phoneWindow.Password = password;
             phoneWindow.Host = host;
             phoneWindow.Show();
-            // hide Login Window
-            this.Hide();
+            // Close Login Window
+            this.Close();
         }
 
         private void btnCloseClick(object sender, RoutedEventArgs e)

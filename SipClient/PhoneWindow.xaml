@@ -3,11 +3,11 @@
         ResizeMode="NoResize" Title="SipClient"
         WindowStartupLocation="CenterScreen" Loaded="Window_Loaded"
         Icon="/SipClient;component/Resources/icon.ico" KeyDown="Window_KeyDown" 
-        MouseDown="Window_MouseDown"
+        MouseDown="Window_MouseDown" Closing="Window_Closing" 
         WindowStyle="None" AllowsTransparency="True" BorderBrush="#4a71ef" BorderThickness="2" 
         mc:Ignorable="d" xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-         SizeToContent="WidthAndHeight" d:DesignHeight="346" d:DesignWidth="250">
+         SizeToContent="WidthAndHeight" d:DesignHeight="389" d:DesignWidth="259">
     <Border>
         <Grid>
             <!--Gradient Background-->
@@ -50,15 +50,12 @@
             </Menu>
             <!--Controls-->
             <Border Background="White" Margin="0,25,0,4">
-                <Grid>
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="74"></RowDefinition>
-                        <RowDefinition Height="190"></RowDefinition>
-                    </Grid.RowDefinitions>
+                <StackPanel>
                     <!--StatusPanel-->
-                    <Border Grid.Row="0" Margin="2">
+                    <Border Margin="2">
                         <Grid>
                             <Grid.RowDefinitions>
+                                <RowDefinition Height="35"></RowDefinition>
                                 <RowDefinition Height="35"></RowDefinition>
                                 <RowDefinition Height="35"></RowDefinition>
                             </Grid.RowDefinitions>
@@ -84,20 +81,39 @@
                                     <ColumnDefinition Width="40"></ColumnDefinition>
                                     <ColumnDefinition></ColumnDefinition>
                                 </Grid.ColumnDefinitions>
-                                <Image Name="SoundIcon" Grid.Column="0" Source="/SipClient;component/Resources/speaker_on_64x64.png"></Image>
-                                <Slider Grid.Column="1" Height="26" Maximum="1" Name="volumeSlider" Value="0.8" ValueChanged="volumeSlider_ValueChanged" LargeChange="0.1" />
+                                <Button Background="{x:Null}" Click="btnVolumeOffOn">
+                                    <ContentControl>
+                                        <Image Name="SoundIcon" Grid.Column="0" Source="/SipClient;component/Resources/speaker_on_64x64.png"></Image>
+                                    </ContentControl>
+                                </Button>
+                                <Slider Grid.Column="1" Height="26" Maximum="1" Name="volumeSlider" Value="1.0" ValueChanged="volumeSlider_ValueChanged" LargeChange="0.1" />
                             </Grid>
+                            <!--Microphone settings-->
+                            <Grid Grid.Row="2" Margin="2">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="40"></ColumnDefinition>
+                                    <ColumnDefinition></ColumnDefinition>
+                                </Grid.ColumnDefinitions>
+                                <Button Background="{x:Null}" Click="btnMicOffOn">
+                                    <ContentControl>
+                                        <Image Name="MicIcon" Grid.Column="0" Source="/SipClient;component/Resources/mic_on.png"></Image>
+                                    </ContentControl>
+                                </Button>
+                                <Slider Grid.Column="1" Height="26" Maximum="1" Name="micSlider" Value="1.0" ValueChanged="micSlider_ValueChanged" LargeChange="0.1" />
+                            </Grid>
+
                         </Grid>
                     </Border>
+
                     <!--Numpad-->
                     <Border Grid.Row="1">
                         <Grid>
                             <Grid.RowDefinitions>
-                                <RowDefinition></RowDefinition>
-                                <RowDefinition></RowDefinition>
-                                <RowDefinition></RowDefinition>
-                                <RowDefinition></RowDefinition>
-                                <RowDefinition></RowDefinition>
+                                <RowDefinition Height="40"></RowDefinition>
+                                <RowDefinition Height="40"></RowDefinition>
+                                <RowDefinition Height="40"></RowDefinition>
+                                <RowDefinition Height="40"></RowDefinition>
+                                <RowDefinition Height="40"></RowDefinition>
                             </Grid.RowDefinitions>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition></ColumnDefinition>
@@ -124,7 +140,8 @@
                             <Button Grid.Row="4" Grid.Column="2" BorderBrush="#979797" BorderThickness="1" Tag="#" Click="buttonKeyPadButton_Click" Content="#" FontSize="18" ></Button>
                         </Grid>
                     </Border>
-                </Grid>
+                </StackPanel>
+
             </Border>
         </Grid>
     </Border>

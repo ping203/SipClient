@@ -503,12 +503,7 @@ namespace SipClient
 
         private void btnCloseClick(object sender, RoutedEventArgs e)
         {
-            // close all conenctions
-            this.softphone.Disconnect();
-            SipClientQueue.Close();
-            OrdersQueue.Close();
-            // application shutdown
-            App.Current.Shutdown();
+            this.Close();
         }
 
         private void Window_MouseDown(object sender, MouseButtonEventArgs e)
@@ -582,6 +577,33 @@ namespace SipClient
 
             // Добавим символ с кнокпки
             txtPhoneNumber.Text += btn.Content.ToString().Trim();
+        }
+
+        private void micSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+        {
+
+        }
+
+        private void btnVolumeOffOn(object sender, RoutedEventArgs e)
+        {
+
+        }
+
+        private void btnMicOffOn(object sender, RoutedEventArgs e)
+        {
+
+        }
+
+        private void Window_Closing(object sender, CancelEventArgs e)
+        {
+            // close all conenctions
+            this.softphone.Disconnect();
+            OrdersQueue.ReceiveCompleted -= new ReceiveCompletedEventHandler(OrdersQueue_ReceiveCompleted);
+            SipClientQueue.Dispose();
+            OrdersQueue.Dispose();
+
+            // application shutdown
+            App.Current.Shutdown();
         }
     }
 }
