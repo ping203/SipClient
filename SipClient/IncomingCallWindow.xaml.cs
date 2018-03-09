@@ -21,6 +21,10 @@ namespace SipClient
     {
         private static SoundPlayer soundPlayer = new SoundPlayer();
 
+        public sipdotnet.Call Call { get; set; }
+
+        public sipdotnet.Phone SoftPhone { get; set; }
+
         public IncomingCallWindow()
         {
             InitializeComponent();
@@ -36,9 +40,9 @@ namespace SipClient
             this.Close();
         }
 
-        public string Name = String.Empty;
-        public string Phone = String.Empty;
-        public string Address = String.Empty;
+        public string Name { get; set; }
+        public string Phone { get; set; }
+        public string Address { get; set; }
 
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
@@ -68,7 +72,7 @@ namespace SipClient
         void btnAddNewOrder_Click(object sender, RoutedEventArgs e)
         {
             PhoneWindow.CreateNewOrderFlag = true;
-            //PhoneWindow.SendMessageToOrders(null);
+            PhoneWindow.SendMessageToOrders();
         }
 
         private void btnAccept_Click(object sender, RoutedEventArgs e)
@@ -76,15 +80,8 @@ namespace SipClient
             if (soundPlayer.IsLoadCompleted)
                 soundPlayer.Stop();
 
-            //if (Call.CallState == Ozeki.VoIP.CallState.LocalHeld)
-            //{
-            //    Call.ToggleHold();
-            //}
-            //else
-            //{
-            //    // принимаем звонок 
-            //    Call.Answer();
-            //}
+            // принимаем звонок 
+            SoftPhone.ReceiveOrResumeCall(this.Call);           
         }
 
         private void btnHoldOn_Click(object sender, RoutedEventArgs e)
@@ -92,10 +89,10 @@ namespace SipClient
             if (soundPlayer.IsLoadCompleted)
                 soundPlayer.Stop();
             // Если удерживаем звонок
-            //if (Call.CallState != Ozeki.VoIP.CallState.LocalHeld)
-            //{
-            //    Call.ToggleHold();
-            //}
+            if (Call != null)
+            {
+                SoftPhone.HoldCall(this.Call);
+            }
         }
 
         private void btnReject_Click(object sender, RoutedEventArgs e)
@@ -103,10 +100,10 @@ namespace SipClient
             if (soundPlayer.IsLoadCompleted)
                 soundPlayer.Stop();
             // отклоняем звонок 
-            //if (Call.IsAnswered)
-            //{
-            //    Call.HangUp();
-            //}
+            if (Call != null)
+            {
+                SoftPhone.TerminateCall(this.Call);
+            }
             this.Close();
         }
 
@@ -114,8 +111,8 @@ namespace SipClient
         {
             if (soundPlayer.IsLoadCompleted)
                 soundPlayer.Stop();
-            //if (Call != null && Call.IsAnswered)
-            //    Call.HangUp();
+            if (this.Call != null && this.Call.GetState() != sipdotnet.Call.CallState.None)
+                SoftPhone.TerminateCall(this.Call);
         }
 
         internal void SetAttributes(string phone, string name, string address)
