@@ -49,6 +49,7 @@ namespace SipClient
             // Play Sound
             soundPlayer.Stream = Properties.Resources.signal;
             soundPlayer.PlayLooping();
+            SoftPhone.GetMediaHandler.EchoCancellation(Call, true);
             // Load Inforamtion
             SetAttributes(Phone, Name, Address);
         }

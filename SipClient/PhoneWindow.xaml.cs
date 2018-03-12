@@ -1,17 +1,17 @@
 ﻿using System;
 using System.ComponentModel;
 using System.Linq;
-using System.Text;
+using System.Messaging;
+using System.Runtime.Serialization.Formatters.Binary;
 using System.Text.RegularExpressions;
 using System.Threading;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
-using System.Windows.Media;
+using System.Windows.Media.Animation;
 using System.Windows.Media.Imaging;
 using System.Windows.Threading;
-using System.Messaging;
-using System.Runtime.Serialization.Formatters.Binary;
 using sipdotnet;
 
 namespace SipClient
@@ -36,16 +36,18 @@ namespace SipClient
             // Initialize all controls
             InitializeComponent();
 
-            txtPhoneNumber.Text = _PHONE_NUMBER_HELP;
+            this.txtPhoneNumber.Text = _PHONE_NUMBER_HELP;
+            this.SpeakerOff = false;
+            this.MicrophoneOff = false;
         }
 
         void Window_Loaded(object sender, RoutedEventArgs e)
         {
-            // Инициализиурем подключение к телефону
-            ThreadPool.QueueUserWorkItem(InitializeSoftphone);
-            // Инициализиурем подключение к очереди сообщений
-            ThreadPool.QueueUserWorkItem((state) =>
+            Task.Factory.StartNew(() =>
             {
+                // Инициализиурем подключение к телефону
+                InitializeSoftphone();
+                // Инициализиурем подключение к очереди сообщений
                 try
                 {
                     SipClientQueue = MSQ.MessageQueueFactory.GetSipClientQueue;
@@ -58,10 +60,10 @@ namespace SipClient
                 {
                     MessageBox.Show(ex.Message);
                 }
+
             });
             // Set Fields
             miUsername.Header = Login;
-            volumeSlider.Value = 1f; // set max volume as def
         }
 
         private static IncomingCallWindow incCallWindow = null;
@@ -115,7 +117,7 @@ namespace SipClient
             }
         }
 
-        private void InitializeSoftphone(object state)
+        private void InitializeSoftphone()
         {
             try
             {
@@ -151,6 +153,9 @@ namespace SipClient
                     txtPhoneNumber.Text = _PHONE_NUMBER_HELP;
                     txtCallStatus.Text = "Закончен";
                     this.PhoneIcon.Source = new BitmapImage(new Uri("/SipClient;component/Resources/telephone.png", UriKind.Relative));
+
+                    // Disable Timer clockdown
+                    TimerDisable();
                 });
         }
 
@@ -160,6 +165,9 @@ namespace SipClient
             {
                 this.txtCallStatus.Text = "Входящий";
                 this.PhoneIcon.Source = new BitmapImage(new Uri("/SipClient;component/Resources/call-end.png", UriKind.Relative));
+
+                // Enable timer clockdown
+                TimerEnable();
             });
         }
 
@@ -391,24 +399,27 @@ namespace SipClient
         // изменение ползунка с громкостью
         private void volumeSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
         {
+            if (call == null)
+                return;
+
             // change graphics
-            if (volumeSlider.Value == 0)
+            var volValue = this.volumeSlider.Value;
+            InvokeGUIThread(() =>
             {
-                InvokeGUIThread(() =>
-                {
-                    var source = new Uri(@"/SipClient;component/Resources/speaker_off_64x64.png", UriKind.Relative);
-                    this.SoundIcon.Source = new BitmapImage(source);
-                });
-            }
-            else if (volumeSlider.Value > 0)
+                this.volumeSlider.SelectionEnd = volValue;
+            });
+
+            softphone.GetMediaHandler.SetSpeakerSound(call, (float)(volValue % 100));
+
+        }
+
+        private void micSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+        {
+            var micValue = this.micSlider.Value;
+            InvokeGUIThread(() =>
             {
-                InvokeGUIThread(() =>
-                {
-                    var source = new Uri(@"/SipClient;component/Resources/speaker_on_64x64.png", UriKind.Relative);
-                    this.SoundIcon.Source = new BitmapImage(source);
-                });
-            }
-            //speaker.Volume = (float)volumeSlider.Value;
+                this.micSlider.SelectionEnd = micValue;
+            });
         }
 
         private void txtPhoneNumber_GotFocus(object sender, RoutedEventArgs e)
@@ -579,19 +590,41 @@ namespace SipClient
             txtPhoneNumber.Text += btn.Content.ToString().Trim();
         }
 
-        private void micSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
-        {
-
-        }
+        public bool SpeakerOff { get; set; }
+        public bool MicrophoneOff { get; set; }
 
         private void btnVolumeOffOn(object sender, RoutedEventArgs e)
         {
-
+            this.SpeakerOff = !SpeakerOff;
+            ChangeIcons();
         }
 
         private void btnMicOffOn(object sender, RoutedEventArgs e)
         {
+            this.MicrophoneOff = !MicrophoneOff;
+            softphone.GetMediaHandler.MicrophoneEnable(!MicrophoneOff);
+            ChangeIcons();
+        }
 
+        private void ChangeIcons()
+        {
+            if (!SpeakerOff)
+            {
+                InvokeGUIThread(() => { this.SpeakerIcon.Source = new BitmapImage(new Uri("/SipClient;component/Resources/speaker_on_64x64.png", UriKind.Relative)); });
+            }
+            else
+            {
+                InvokeGUIThread(() => { this.SpeakerIcon.Source = new BitmapImage(new Uri("/SipClient;component/Resources/speaker_off_64x64.png", UriKind.Relative)); });
+            }
+
+            if (!MicrophoneOff)
+            {
+                InvokeGUIThread(() => { this.MicIcon.Source = new BitmapImage(new Uri("/SipClient;component/Resources/mic_on.png", UriKind.Relative)); });
+            }
+            else
+            {
+                InvokeGUIThread(() => { this.MicIcon.Source = new BitmapImage(new Uri("/SipClient;component/Resources/mic_off.png", UriKind.Relative)); });
+            }
         }
 
         private void Window_Closing(object sender, CancelEventArgs e)
@@ -604,6 +637,99 @@ namespace SipClient
 
             // application shutdown
             App.Current.Shutdown();
+        }
+
+        private void CheckSoundDevices()
+        {
+            var soundDevs = softphone.GetMediaHandler.GetAvailableSoundDevices;
+            var playbackDev = soundDevs.Where(isSpeaker).FirstOrDefault();
+            var recordDev = soundDevs.Where(isMicrophone).FirstOrDefault();
+            if (playbackDev == null || recordDev == null)
+            {
+                MessageBox.Show("Отсутствует устройство записи или воспроизведения!", "Внимание!", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private Func<string, bool> isMicrophone = (device) => Regex.Match(device, "(Микрофон)").Success;
+        private Func<string, bool> isSpeaker = (device) => Regex.Match(device, "(Динамики)").Success;
+
+        // Show user call statistic
+        private void miUsername_Click(object sender, RoutedEventArgs e)
+        {
+
+        }
+
+        private DispatcherTimer timer;
+        private TimeSpan timeSpan;
+
+        private void AnimationTimerGrow()
+        {
+            lblTime.Content = "00:00:00";
+
+            DoubleAnimation animation = new DoubleAnimation();
+            animation.From = lblTime.ActualHeight;
+            animation.To = 30;
+            animation.SpeedRatio = 2;
+            animation.Duration = TimeSpan.FromSeconds(1);
+            lblTime.BeginAnimation(Label.HeightProperty, animation);
+        }
+
+        private void AnimationTimerDecrease()
+        {
+            DoubleAnimation animation = new DoubleAnimation();
+            animation.From = lblTime.ActualHeight;
+            animation.To = 0;
+            animation.SpeedRatio = 2;
+            animation.Duration = TimeSpan.FromSeconds(1);
+            lblTime.BeginAnimation(Label.HeightProperty, animation);
+        }
+
+        internal void StartTimer()
+        {
+            if (timer == null)
+                timer = new DispatcherTimer();
+
+            timeSpan = new TimeSpan();
+            timer.Interval = new TimeSpan(0, 0, 0, 0, 0010);
+            timer.Tick += ((sender, e) =>
+            {
+                InvokeGUIThread(() =>
+                {
+                    timeSpan += timer.Interval;
+                    lblTime.Content = timeSpan.ToString(@"mm\:ss\:ff");
+                });
+
+            });
+            timer.Start();
+        }
+
+        internal void StopTimer()
+        {
+            if (timer == null)
+                return;
+
+            timer.Stop();
+        }
+
+        internal void TimerEnable()
+        {
+            // load animation
+            AnimationTimerGrow();
+            // run timer
+            StartTimer();
+        }
+
+        internal void TimerDisable()
+        {
+            StopTimer();
+            DispatcherTimer animTimer = new DispatcherTimer();
+            animTimer.Interval = new TimeSpan(0, 0, 2);
+            animTimer.Tick += (sender, e) =>
+            {
+                AnimationTimerDecrease();
+                animTimer.Stop();
+            };
+            animTimer.Start();
         }
     }
 }
