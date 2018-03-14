@@ -91,6 +91,15 @@ namespace SipClient.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Data Source=.\calls.db.
+        /// </summary>
+        internal static string ConnectionStringCalls {
+            get {
+                return ResourceManager.GetString("ConnectionStringCalls", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized resource of type System.Drawing.Icon similar to (Icon).
         /// </summary>
         internal static System.Drawing.Icon icon {

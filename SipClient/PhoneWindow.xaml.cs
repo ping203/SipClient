@@ -1,7 +1,6 @@
 ﻿using System;
 using System.ComponentModel;
 using System.Linq;
-using System.Messaging;
 using System.Runtime.Serialization.Formatters.Binary;
 using System.Text.RegularExpressions;
 using System.Threading;
@@ -27,9 +26,12 @@ namespace SipClient
 
         private const string _PHONE_NUMBER_HELP = "Введите номер";
 
-        // Message Queue
-        private static MessageQueue SipClientQueue;
-        private static MessageQueue OrdersQueue;
+        //// Message Queue
+        //private static MessageQueue SipClientQueue;
+        //private static MessageQueue OrdersQueue;
+
+        // Record to DataBase
+        private Classes.CallRecord recordToDataBase;
 
         public PhoneWindow()
         {
@@ -48,18 +50,18 @@ namespace SipClient
                 // Инициализиурем подключение к телефону
                 InitializeSoftphone();
                 // Инициализиурем подключение к очереди сообщений
-                try
-                {
-                    SipClientQueue = MSQ.MessageQueueFactory.GetSipClientQueue;
-                    OrdersQueue = MSQ.MessageQueueFactory.GetOrdersQueue;
+                //try
+                //{
+                //    SipClientQueue = MSQ.MessageQueueFactory.GetSipClientQueue;
+                //    OrdersQueue = MSQ.MessageQueueFactory.GetOrdersQueue;
 
-                    OrdersQueue.ReceiveCompleted += new ReceiveCompletedEventHandler(OrdersQueue_ReceiveCompleted);
-                    OrdersQueue.BeginReceive();
-                }
-                catch (Exception ex)
-                {
-                    MessageBox.Show(ex.Message);
-                }
+                //    OrdersQueue.ReceiveCompleted += new ReceiveCompletedEventHandler(OrdersQueue_ReceiveCompleted);
+                //    OrdersQueue.BeginReceive();
+                //}
+                //catch (Exception ex)
+                //{
+                //    MessageBox.Show(ex.Message);
+                //}
 
             });
             // Set Fields
@@ -83,39 +85,38 @@ namespace SipClient
                 InvokeGUIThread(() =>
                 {
                     incCallWindow.SetAttributes(customer.PhoneNumber, customer.Name, customer.Addres);
-                    incCallWindow.AddButtonNewOrderAvailable();
                 });
             }
         }
 
-        // Получаем сообщения от Orders
-        private void OrdersQueue_ReceiveCompleted(object sender, ReceiveCompletedEventArgs e)
-        {
-            try
-            {
-                var msg = OrdersQueue.EndReceive(e.AsyncResult);
+        //// Получаем сообщения от Orders
+        //private void OrdersQueue_ReceiveCompleted(object sender, ReceiveCompletedEventArgs e)
+        //{
+        //    try
+        //    {
+        //        var msg = OrdersQueue.EndReceive(e.AsyncResult);
 
-                BinaryFormatter formatter = new BinaryFormatter();
+        //        BinaryFormatter formatter = new BinaryFormatter();
 
-                if (msg != null)
-                {
-                    // Десериализую сообщение из потока
-                    MSQ.Message message = (MSQ.Message)formatter.Deserialize(msg.BodyStream);
-                    // Передаю на обработку в фоновый поток
-                    ThreadPool.QueueUserWorkItem(
-                        new WaitCallback((object state) =>
-                        {
-                            ProcessIncomingMessage(message);
-                        }), null);
-                }
-                // Разрешаю прием сообщений
-                OrdersQueue.BeginReceive();
-            }
-            catch (MessageQueueException msqex)
-            {
-                MessageBox.Show(msqex.Message + Environment.NewLine + msqex.StackTrace);
-            }
-        }
+        //        if (msg != null)
+        //        {
+        //            // Десериализую сообщение из потока
+        //            MSQ.Message message = (MSQ.Message)formatter.Deserialize(msg.BodyStream);
+        //            // Передаю на обработку в фоновый поток
+        //            ThreadPool.QueueUserWorkItem(
+        //                new WaitCallback((object state) =>
+        //                {
+        //                    ProcessIncomingMessage(message);
+        //                }), null);
+        //        }
+        //        // Разрешаю прием сообщений
+        //        OrdersQueue.BeginReceive();
+        //    }
+        //    catch (MessageQueueException msqex)
+        //    {
+        //        MessageBox.Show(msqex.Message + Environment.NewLine + msqex.StackTrace);
+        //    }
+        //}
 
         private void InitializeSoftphone()
         {
@@ -131,8 +132,11 @@ namespace SipClient
                 softphone.CallActiveEvent += new Phone.OnCallActive(softphone_CallActiveEvent);
                 softphone.CallCompletedEvent += new Phone.OnCallCompleted(softphone_CallCompletedEvent);
 
-                //Connect to server
+                // Connect to server
                 softphone.Connect();
+
+                // Check sound devices
+                this.CheckSoundDevices();
             }
             catch (Exception ex)
             {
@@ -142,14 +146,44 @@ namespace SipClient
 
         private void softphone_CallCompletedEvent(Call call)
         {
-            // make null current call
-            this.call = null;
-
-            // Close incoming call window
             InvokeGUIThread(() =>
                 {
+                    // Incoming call
                     if (incCallWindow != null)
+                    {
+                        // add record to db  
+                        try
+                        {
+                            recordToDataBase.Phone = incCallWindow.Phone;
+                            recordToDataBase.TimeEnd = DateTime.Now.ToString();
+                            Classes.Records.AddRecordToDataBase(recordToDataBase);
+                        }
+                        catch (Exception e)
+                        {
+                            MessageBox.Show(e.Message + Environment.NewLine + e.StackTrace);
+                        }
+                        // Close incoming call window
                         incCallWindow.Close();
+                        incCallWindow = null;
+                    }
+                    else
+                    {
+                        // Outcoming call
+                        // add record to db  
+                        try
+                        {
+                            recordToDataBase.isIncoming = 0;
+                            recordToDataBase.Phone = txtPhoneNumber.Text;
+                            recordToDataBase.TimeEnd = DateTime.Now.ToString();
+                            Classes.Records.AddRecordToDataBase(recordToDataBase);
+                        }
+                        catch (Exception e)
+                        {
+                            MessageBox.Show(e.Message + Environment.NewLine + e.StackTrace);
+                        }
+                    }                   
+
+                    // Update icons and text
                     txtPhoneNumber.Text = _PHONE_NUMBER_HELP;
                     txtCallStatus.Text = "Закончен";
                     this.PhoneIcon.Source = new BitmapImage(new Uri("/SipClient;component/Resources/telephone.png", UriKind.Relative));
@@ -157,6 +191,10 @@ namespace SipClient
                     // Disable Timer clockdown
                     TimerDisable();
                 });
+
+            // make null current call, window, lastMessage
+            this.call = null;
+            //lastIncomingMessage = null;
         }
 
         private void softphone_CallActiveEvent(Call call)
@@ -169,6 +207,10 @@ namespace SipClient
                 // Enable timer clockdown
                 TimerEnable();
             });
+
+            if (recordToDataBase == null)
+                recordToDataBase = new Classes.CallRecord();
+            recordToDataBase.TimeStart = DateTime.Now.ToString();
         }
 
         private void softphone_PhoneDisconnectedEvent()
@@ -200,7 +242,7 @@ namespace SipClient
                 this.txtCallStatus.Text = "Входящий";
                 this.PhoneIcon.Source = new BitmapImage(new Uri("/SipClient;component/Resources/call-end.png", UriKind.Relative));
             });
-            // Reject incoming call, if we have actieve
+            // Reject incoming call, if we have active
             if (this.call != null)
             {
                 softphone.TerminateCall(incomingCall);
@@ -222,12 +264,16 @@ namespace SipClient
                         incCallWindow.SoftPhone = this.softphone;
                         incCallWindow.Show();
                     });
+                    //send message to orders
+                    //SendMessageToOrders();
+
+                    if (recordToDataBase == null)
+                        recordToDataBase = new Classes.CallRecord();
+
+                    recordToDataBase.isIncoming = 1;
                 }
             }
         }
-
-        private Func<string, string> GetCallId = (string sip) => Regex.Match(sip, @"[\\""](\w+)[\\""]").Groups[1].Value;
-        private Func<string, string> GetPhone = (string sip) => Regex.Match(sip, @"sip:(\d+)@").Groups[1].Value;
 
         private void softphone_ErrorEvent(Call call, Phone.Error error)
         {
@@ -271,48 +317,68 @@ namespace SipClient
             }
         }
 
-        // Check number
-        private bool IsPhoneNumber(string number)
+#warning ex2
+        private void SetVolumes()
         {
-            return Regex.Match(number, @"^((\+7|7|8)+([0-9]){4})?([0-9]{3})?([0-9]{3})$").Success;
+            var micValue = (this.micSlider.Value);
+            var speakerValue = (this.volumeSlider.Value);
+            var currentSetMicValue = Math.Ceiling(this.softphone.GetMediaHandler.GetMicrophoneSound(call) * 100);
+            var currentSetSpeakerValue = Math.Ceiling(this.softphone.GetMediaHandler.GetSpeakerSound(call) * 100);
+
+            // set new mic value 
+            if (micValue - currentSetMicValue != 0)
+            {
+                this.micSlider.Value = micValue;
+            }
+            // set new speaker value 
+            if (speakerValue - currentSetSpeakerValue != 0)
+            {
+                this.volumeSlider.Value = speakerValue;
+            }
         }
+
+        private Func<string, bool> IsPhoneNumber = (string number) => Regex.Match(number, @"^((\+7|7|8)+([0-9]){4})?([0-9]{3})?([0-9]{3})$").Success;
+
+        private Func<string, string> GetCallId = (string sip) => Regex.Match(sip, @"[\\""](\w+)[\\""]").Groups[1].Value;
+
+        private Func<string, string> GetPhone = (string sip) => Regex.Match(sip, @"sip:(\d+)@").Groups[1].Value;
 
         /// <summary>
         /// Send message to Orders
         /// </summary>
-        public static void SendMessageToOrders()
-        {
-            //Формируем сообщение и отправляем его
-            using (var msg = new System.Messaging.Message())
-            {
-                //create message
-                MSQ.Message msq_message = null;
-                //use latest message
-                if (lastIncomingMessage != null)
-                {
-                    //Set new behaviour
-                    lastIncomingMessage.BehaviourFlags.isCreateNewOrder = CreateNewOrderFlag;
-                    //set link to message
-                    msq_message = lastIncomingMessage;
-                }
-                else //or create new message
-                {
-                    string phone = string.Empty;
-                    if (incCallWindow != null)
-                        phone = incCallWindow.Phone;
+        //public static void SendMessageToOrders()
+        //{
+        //    //Формируем сообщение и отправляем его
+        //    using (var msg = new System.Messaging.Message())
+        //    {
+        //        //create message
+        //        MSQ.Message msq_message = null;
+        //        //use latest message
+        //        if (lastIncomingMessage != null)
+        //        {
+        //            //Set new behaviour
+        //            lastIncomingMessage.BehaviourFlags.isCreateNewOrder = CreateNewOrderFlag;
+        //            //set link to message
+        //            msq_message = lastIncomingMessage;
+        //        }
+        //        else //or create new message
+        //        {
+        //            string phone = string.Empty;
+        //            if (incCallWindow != null)
+        //                phone = incCallWindow.Phone;
 
-                    msq_message = new MSQ.Message();
-                    msq_message.BehaviourFlags = new MSQ.Behaviour() { isFinded = false, isCreateNewOrder = false };
-                    msq_message.CustomerInfo = new MSQ.Customer() { Addres = String.Empty, Name = String.Empty, PhoneNumber = phone };
-                }
-                //Create queue message with guaranteed delivery
-                msg.Body = msq_message;
-                msg.Recoverable = true;
-                msg.Formatter = new BinaryMessageFormatter();
-                //Send to sipClient queue
-                SipClientQueue.Send(msg);
-            }
-        }
+        //            msq_message = new MSQ.Message();
+        //            msq_message.BehaviourFlags = new MSQ.Behaviour() { isFinded = false, isCreateNewOrder = false };
+        //            msq_message.CustomerInfo = new MSQ.Customer() { Addres = String.Empty, Name = String.Empty, PhoneNumber = phone };
+        //        }
+        //        //Create queue message with guaranteed delivery
+        //        msg.Body = msq_message;
+        //        msg.Recoverable = true;
+        //        msg.Formatter = new BinaryMessageFormatter();
+        //        //Send to sipClient queue
+        //        SipClientQueue.Send(msg);
+        //    }
+        //}
 
         /// <summary>
         ///  Click on the phone board buttons
@@ -399,7 +465,7 @@ namespace SipClient
         // изменение ползунка с громкостью
         private void volumeSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
         {
-            if (call == null)
+            if (this.call == null)
                 return;
 
             // change graphics
@@ -408,18 +474,23 @@ namespace SipClient
             {
                 this.volumeSlider.SelectionEnd = volValue;
             });
-
-            softphone.GetMediaHandler.SetSpeakerSound(call, (float)(volValue % 100));
-
+            // set new value
+            softphone.GetMediaHandler.SetSpeakerSound(this.call, (float)(volValue % 100));
         }
 
         private void micSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
         {
+            if (this.call == null)
+                return;
+
+            // change graphics
             var micValue = this.micSlider.Value;
             InvokeGUIThread(() =>
             {
                 this.micSlider.SelectionEnd = micValue;
             });
+            // set new value
+            softphone.GetMediaHandler.SetMicrophoneSound(this.call, (float)(micValue % 100));
         }
 
         private void txtPhoneNumber_GotFocus(object sender, RoutedEventArgs e)
@@ -602,6 +673,7 @@ namespace SipClient
         private void btnMicOffOn(object sender, RoutedEventArgs e)
         {
             this.MicrophoneOff = !MicrophoneOff;
+#warning ex3
             softphone.GetMediaHandler.MicrophoneEnable(!MicrophoneOff);
             ChangeIcons();
         }
@@ -631,23 +703,33 @@ namespace SipClient
         {
             // close all conenctions
             this.softphone.Disconnect();
-            OrdersQueue.ReceiveCompleted -= new ReceiveCompletedEventHandler(OrdersQueue_ReceiveCompleted);
-            SipClientQueue.Dispose();
-            OrdersQueue.Dispose();
+            //OrdersQueue.ReceiveCompleted -= new ReceiveCompletedEventHandler(OrdersQueue_ReceiveCompleted);
+            //SipClientQueue.Dispose();
+            //OrdersQueue.Dispose();
 
             // application shutdown
             App.Current.Shutdown();
         }
 
-        private void CheckSoundDevices()
+        private bool CheckSoundDevices()
         {
+#warning ex4
             var soundDevs = softphone.GetMediaHandler.GetAvailableSoundDevices;
             var playbackDev = soundDevs.Where(isSpeaker).FirstOrDefault();
             var recordDev = soundDevs.Where(isMicrophone).FirstOrDefault();
-            if (playbackDev == null || recordDev == null)
+
+            bool notGood = true;
+            if (notGood = (playbackDev == null || recordDev == null))
             {
-                MessageBox.Show("Отсутствует устройство записи или воспроизведения!", "Внимание!", MessageBoxButton.OK, MessageBoxImage.Error);
+                string message = "Отсутствует устройство ";
+                if (playbackDev == null)
+                    message += ": Воспроизведения ";
+                if (recordDev == null)
+                    message += ": Записи ";
+                message += "!\nПроверьте подключение этих устройств!";
+                MessageBox.Show(message, "Внимание!", MessageBoxButton.OK, MessageBoxImage.Error);
             }
+            return !notGood;
         }
 
         private Func<string, bool> isMicrophone = (device) => Regex.Match(device, "(Микрофон)").Success;
@@ -656,7 +738,8 @@ namespace SipClient
         // Show user call statistic
         private void miUsername_Click(object sender, RoutedEventArgs e)
         {
-
+            UserStat userStat = new UserStat();
+            userStat.Show();
         }
 
         private DispatcherTimer timer;

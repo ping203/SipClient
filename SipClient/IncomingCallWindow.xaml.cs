@@ -49,31 +49,10 @@ namespace SipClient
             // Play Sound
             soundPlayer.Stream = Properties.Resources.signal;
             soundPlayer.PlayLooping();
+#warning ex1
             SoftPhone.GetMediaHandler.EchoCancellation(Call, true);
             // Load Inforamtion
             SetAttributes(Phone, Name, Address);
-        }
-
-        private Button btnAddNewOrder;
-        /// <summary>
-        /// Добавляем кнопку на форму
-        /// </summary>
-        public void AddButtonNewOrderAvailable()
-        {
-            this.Dispatcher.Invoke((Action)(() =>
-            {
-                btnAddNewOrder = new Button();
-                btnAddNewOrder.Margin = new Thickness(5);
-                btnAddNewOrder.Click += new RoutedEventHandler(btnAddNewOrder_Click);
-                btnAddNewOrder.Content = "Создать новый заказ";
-                layoutNewOrder.Children.Add(btnAddNewOrder);
-            }));           
-        }
-
-        void btnAddNewOrder_Click(object sender, RoutedEventArgs e)
-        {
-            PhoneWindow.CreateNewOrderFlag = true;
-            PhoneWindow.SendMessageToOrders();
         }
 
         private void btnAccept_Click(object sender, RoutedEventArgs e)
@@ -82,7 +61,7 @@ namespace SipClient
                 soundPlayer.Stop();
 
             // принимаем звонок 
-            SoftPhone.ReceiveOrResumeCall(this.Call);           
+            SoftPhone.ReceiveOrResumeCall(this.Call);
         }
 
         private void btnHoldOn_Click(object sender, RoutedEventArgs e)

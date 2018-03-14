@@ -13,6 +13,11 @@ namespace SipClient
     /// </summary>
     public partial class App : Application
     {
+        public App()
+        {
+            this.DispatcherUnhandledException += new DispatcherUnhandledExceptionEventHandler(App_DispatcherUnhandledException);
+        }
+
          void App_DispatcherUnhandledException(object sender, DispatcherUnhandledExceptionEventArgs e)
         {
             // Process unhandled exception

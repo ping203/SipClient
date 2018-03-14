@@ -37,6 +37,11 @@ namespace SipClient
 
         private void btnAppend_Click(object sender, RoutedEventArgs e)
         {
+            string path = System.IO.Path.GetFullPath(Properties.Resources.PathToSettings);
+
+            if (!System.IO.File.Exists(path))
+                path = @"./Settings.xml";
+
             string host = txtHostAddress.Text;
             string login = txtLogin.Text;
             string password = txtPassword.Text;
@@ -47,7 +52,7 @@ namespace SipClient
             try
             {
                 XmlDocument xDoc = new XmlDocument();
-                using (FileStream fs = new FileStream(System.IO.Path.GetFullPath(Properties.Resources.PathToSettings), FileMode.Open, FileAccess.Read))
+                using (FileStream fs = new FileStream(path, FileMode.Open, FileAccess.Read))
                 {
                     xDoc.Load(fs);
                 }

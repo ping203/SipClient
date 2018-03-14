@@ -70,12 +70,13 @@
     <Reference Include="MSQ, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\..\dev\MSQ\bin\Debug\MSQ.dll</HintPath>
     </Reference>
-    <Reference Include="sipdotnet">
-      <HintPath>..\..\sipdotnet\bin\Debug\sipdotnet.dll</HintPath>
+    <Reference Include="sipdotnet, Version=0.0.0.0, Culture=neutral, processorArchitecture=AMD64">
+      <HintPath>..\..\sipdotnet\bin\x86\Debug\sipdotnet.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.ComponentModel.DataAnnotations" />
     <Reference Include="System.Data" />
+    <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="System.Data.SQLite, Version=1.0.108.0, Culture=neutral, PublicKeyToken=db937bc2d44ff139, processorArchitecture=MSIL">
       <HintPath>..\packages\System.Data.SQLite.Core.1.0.108.0\lib\net40\System.Data.SQLite.dll</HintPath>
       <Private>True</Private>
@@ -85,7 +86,6 @@
       <Private>True</Private>
     </Reference>
     <Reference Include="System.Drawing" />
-    <Reference Include="System.Messaging" />
     <Reference Include="System.Xaml" />
     <Reference Include="System.Xml" />
     <Reference Include="System.Core" />
@@ -106,7 +106,9 @@
       <DesignTime>True</DesignTime>
       <DependentUpon>Resources.resx</DependentUpon>
     </Compile>
-    <Compile Include="WcfService.cs" />
+    <Compile Include="UserStat.xaml.cs">
+      <DependentUpon>UserStat.xaml</DependentUpon>
+    </Compile>
     <Page Include="SettingsWindow.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
@@ -140,11 +142,15 @@
       <DependentUpon>PhoneWindow.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
+    <Page Include="UserStat.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Properties\AssemblyInfo.cs">
+    <Content Include="Properties\AssemblyInfo.cs">
       <SubType>Code</SubType>
-    </Compile>
+    </Content>
     <None Include="app.config" />
     <None Include="calls.db">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>

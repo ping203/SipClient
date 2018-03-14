@@ -11,44 +11,97 @@ namespace SipClient.Classes
 {
     class Records
     {
-        private string sqliteConString = @"Data Source=.\calls.db";
+        private static int MAX_RECORDS = 25;
 
-        private void AddRecordToTable(SipClient.Classes.CallRecord call)
+        /// <summary>
+        /// Add record to dataase
+        /// </summary>
+        public static void AddRecordToDataBase(SipClient.Classes.CallRecord call)
         {
-            string sql = string.Format("insert into calls(Phone, Time, Type) values('{0}' ,'{1}' , {2})", call.Phone, call.Time, call.Type);
+            string sql = string.Format("insert into calls(Phone, TimeStart, TimeEnd, isIncoming) values('{0}' ,'{1}' ,'{2}' ,{3})", call.Phone, call.TimeStart, call.TimeEnd, call.isIncoming);
 
-            using (var c = new SQLiteConnection(sqliteConString))
+            using (var connection = new SQLiteConnection(Properties.Resources.ConnectionStringCalls))
             {
-                c.Open();
-                using (SQLiteCommand cmd = new SQLiteCommand(sql, c))
+                connection.Open();
+                // check connection state
+                if (connection.State != ConnectionState.Open)
+                    throw new Exception("Connection is not open!");
+
+                // check overflow
+                if (CheckBaseOverflow())
+                    RemoveFirstRecord(connection);
+
+                // add record to table
+                using (SQLiteCommand cmd = new SQLiteCommand(sql, connection))
                 {
                     cmd.ExecuteNonQuery();
                 }
             }
         }
 
-        private DataTable GetDataTable(string sql)
+        /// <summary>
+        /// True if base is Overflow
+        /// </summary>
+        private static bool CheckBaseOverflow()
         {
-            try
+            int recordsCount = 0;
+
+            var dt = GetDataTable("select count(Phone) from calls;");
+
+            if (dt.Rows.Count == 0)
             {
-                DataTable dt = new DataTable();
-                using (var c = new SQLiteConnection(sqliteConString))
+                throw new Exception("Data can't load! Check database!");
+            }
+            recordsCount = Convert.IsDBNull(dt.Rows[0][0]) ? 0 : Convert.ToInt32(dt.Rows[0][0]);
+
+            return (recordsCount > MAX_RECORDS);
+        }
+
+        /// <summary>
+        /// remove first record
+        /// </summary
+        private static void RemoveFirstRecord(SQLiteConnection connection)
+        {
+            if (connection.State != ConnectionState.Open)
+                throw new Exception("Connection is not open!");
+            //// get first phone record
+            //string phone = "null";
+            //using (SQLiteCommand cmd = new SQLiteCommand(string.Format("select Phone from calls order by TimeStart limit 1")
+            //   , connection))
+            //{
+            //    DataTable dt = new DataTable();
+            //    using (SQLiteDataReader rdr = cmd.ExecuteReader())
+            //    {
+            //        dt.Load(rdr);
+            //    }
+            //    phone = Convert.ToString(dt.Rows[0][0]);
+            //};
+            // remove him
+            using (SQLiteCommand cmd = new SQLiteCommand("delete from calls where rowid = 1;", connection))
+            {
+                cmd.ExecuteNonQuery();
+            }
+        }
+
+        public static DataTable GetDataTable(string sql)
+        {
+            DataTable dt = new DataTable();
+
+            using (var c = new SQLiteConnection(Properties.Resources.ConnectionStringCalls))
+            {
+                c.Open();
+
+                if (c.State != ConnectionState.Open)
+                    throw new Exception("Connection is not open!");
+
+                using (SQLiteCommand cmd = new SQLiteCommand(sql, c))
                 {
-                    c.Open();
-                    using (SQLiteCommand cmd = new SQLiteCommand(sql, c))
+                    using (SQLiteDataReader rdr = cmd.ExecuteReader())
                     {
-                        using (SQLiteDataReader rdr = cmd.ExecuteReader())
-                        {
-                            dt.Load(rdr);
-                            return dt;
-                        }
+                        dt.Load(rdr);
+                        return dt;
                     }
                 }
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine(e.Message);
-                return null;
             }
         }
     }

@@ -9,8 +9,9 @@ namespace SipClient.Classes
     public class CallRecord
     {
         private string phone;
-        private string time;
-        private int type;
+        private string time_start;
+        private string time_end;
+        private int type = 0;
 
         public string Phone
         {
@@ -21,16 +22,25 @@ namespace SipClient.Classes
             }
         }
 
-        public string Time
+        public string TimeStart
         {
-            get { return time; }
+            get { return time_start; }
             set
             {
-                time = value;
+                time_start = value;
             }
         }
 
-        public int Type
+        public string TimeEnd
+        {
+            get { return time_end; }
+            set
+            {
+                time_end = value;
+            }
+        }
+
+        public int isIncoming
         {
             get { return type; }
             set
