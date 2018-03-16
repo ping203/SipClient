@@ -67,9 +67,6 @@
       <HintPath>..\packages\EntityFramework.6.0.0\lib\net40\EntityFramework.SqlServer.dll</HintPath>
       <Private>True</Private>
     </Reference>
-    <Reference Include="MSQ, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\..\dev\MSQ\bin\Debug\MSQ.dll</HintPath>
-    </Reference>
     <Reference Include="MySql.Data, Version=6.9.5.0, Culture=neutral, PublicKeyToken=c5687fc88969c44d, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\dev\MySql.Data.dll</HintPath>
@@ -90,10 +87,14 @@
       <Private>True</Private>
     </Reference>
     <Reference Include="System.Drawing" />
+    <Reference Include="System.ServiceModel" />
     <Reference Include="System.Xaml" />
     <Reference Include="System.Xml" />
     <Reference Include="System.Core" />
     <Reference Include="System.Xml.Linq" />
+    <Reference Include="WcfConnectionService">
+      <HintPath>..\..\dev\WcfConnectionService\bin\x86\Debug\WcfConnectionService.dll</HintPath>
+    </Reference>
     <Reference Include="WindowsBase" />
     <Reference Include="PresentationCore" />
     <Reference Include="PresentationFramework" />
@@ -156,6 +157,9 @@
     <Content Include="Properties\AssemblyInfo.cs">
       <SubType>Code</SubType>
     </Content>
+    <Resource Include="Resources\rej_call.png" />
+    <Resource Include="Resources\out_call.png" />
+    <Resource Include="Resources\inc_call.png" />
     <None Include="app.config" />
     <None Include="calls.db">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>

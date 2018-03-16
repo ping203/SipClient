@@ -27,12 +27,12 @@ namespace SipClient
 
         private const string _PHONE_NUMBER_HELP = "Введите номер";
 
-        //// Message Queue
-        //private static MessageQueue SipClientQueue;
-        //private static MessageQueue OrdersQueue;
-
         // Record to DataBase
         private Classes.CallRecord recordToDataBase;
+
+        public static WcfConnectionService.ServiceClient WcfClient;
+
+        private static IncomingCallWindow incCallWindow = null;
 
         public PhoneWindow()
         {
@@ -48,76 +48,28 @@ namespace SipClient
         {
             Task.Factory.StartNew(() =>
             {
-                // Инициализиурем подключение к телефону
+                // SoftPhone initialize
                 InitializeSoftphone();
-                // Инициализиурем подключение к очереди сообщений
-                //try
-                //{
-                //    SipClientQueue = MSQ.MessageQueueFactory.GetSipClientQueue;
-                //    OrdersQueue = MSQ.MessageQueueFactory.GetOrdersQueue;
 
-                //    OrdersQueue.ReceiveCompleted += new ReceiveCompletedEventHandler(OrdersQueue_ReceiveCompleted);
-                //    OrdersQueue.BeginReceive();
-                //}
-                //catch (Exception ex)
-                //{
-                //    MessageBox.Show(ex.Message);
-                //}
-
+                // Create Client connection
+                InitializeWcfClient();
             });
             // Set Fields
             miUsername.Header = Login;
         }
 
-        private static IncomingCallWindow incCallWindow = null;
-        private static MSQ.Message lastIncomingMessage;
-
-        // Обрабатываем входящее сообщение в парраллельном потоке
-        private void ProcessIncomingMessage(MSQ.Message message)
+        private void InitializeWcfClient()
         {
-            //Save link to Last message
-            lastIncomingMessage = message;
-            var customer = message.CustomerInfo;
-            var behaviour = message.BehaviourFlags;
-
-            // Устанавливаем контекст окна с входящим звонком
-            if (incCallWindow != null && behaviour.isFinded)
+            WcfClient = new WcfConnectionService.ServiceClient();
+            try
             {
-                InvokeGUIThread(() =>
-                {
-                    incCallWindow.SetAttributes(customer.PhoneNumber, customer.Name, customer.Addres);
-                });
+                WcfClient.CreateConnection();
+            }
+            catch (Exception e)
+            {
+                MessageBox.Show(e.Message + Environment.NewLine + e.StackTrace);
             }
         }
-
-        //// Получаем сообщения от Orders
-        //private void OrdersQueue_ReceiveCompleted(object sender, ReceiveCompletedEventArgs e)
-        //{
-        //    try
-        //    {
-        //        var msg = OrdersQueue.EndReceive(e.AsyncResult);
-
-        //        BinaryFormatter formatter = new BinaryFormatter();
-
-        //        if (msg != null)
-        //        {
-        //            // Десериализую сообщение из потока
-        //            MSQ.Message message = (MSQ.Message)formatter.Deserialize(msg.BodyStream);
-        //            // Передаю на обработку в фоновый поток
-        //            ThreadPool.QueueUserWorkItem(
-        //                new WaitCallback((object state) =>
-        //                {
-        //                    ProcessIncomingMessage(message);
-        //                }), null);
-        //        }
-        //        // Разрешаю прием сообщений
-        //        OrdersQueue.BeginReceive();
-        //    }
-        //    catch (MessageQueueException msqex)
-        //    {
-        //        MessageBox.Show(msqex.Message + Environment.NewLine + msqex.StackTrace);
-        //    }
-        //}
 
         private void InitializeSoftphone()
         {
@@ -182,7 +134,7 @@ namespace SipClient
                         {
                             MessageBox.Show(e.Message + Environment.NewLine + e.StackTrace);
                         }
-                    }                   
+                    }
 
                     // Update icons and text
                     txtPhoneNumber.Text = _PHONE_NUMBER_HELP;
@@ -256,54 +208,48 @@ namespace SipClient
                 // create incoming call window
                 if (this.call != null)
                 {
-                    string phone = GetPhone(this.call.GetFrom());
-                    string caller_name = GetCallId(this.call.GetFrom());
-                    string address = String.Empty;
-
-#warning MysqlCall
-                    //Get data about caller
-                    try
+                    Task.Factory.StartNew(() =>
                     {
-                       var tabCallerInfo = Classes.MainDataBase.GetDataTable(
-                       string.Format("select cust.order_id, hat.customer_name as name, cust.customer_id as phone, cust.street,cust.house, cust.entrance, cust.floor, cust.apartment, cust.address_text from customers_addresses as cust , orders_hat as hat where hat.customer = '{0}' and cust.customer_id = '{0}' limit 1;", phone));
-                       // Set new values to caller_name , address
-                       if (tabCallerInfo != null && tabCallerInfo.Rows.Count > 0)
-                       {
-                           caller_name = Convert.ToString(tabCallerInfo.Rows[0]["name"]);
-                           address = Convert.ToString(tabCallerInfo.Rows[0]["address_text"]);
-                       }
-                    }
-                    catch (Exception e)
-                    {
-                        Debug.WriteLine(e.Message);
-                    }                   
+                        string phone = GetPhone(this.call.GetFrom());
+                        string caller_name = GetCallId(this.call.GetFrom());
+                        string address = String.Empty;
 
-                    // show incoming call window
-                    InvokeGUIThread(() =>
-                    {
-                        // Create new incoming window
-                        incCallWindow = new IncomingCallWindow();
-                        incCallWindow.Phone = phone;
-                        incCallWindow.Name = caller_name;
-                        incCallWindow.Address = address;
-                        incCallWindow.Call = this.call;
-                        incCallWindow.SoftPhone = this.softphone;
-                        incCallWindow.Show();
-                    });                    
-                    //send message to orders
-                    //SendMessageToOrders();
-                    
+                        // show incoming call window
+                        InvokeGUIThread(() =>
+                        {
+                            // Create new incoming window
+                            incCallWindow = new IncomingCallWindow();
+                            incCallWindow.Phone = phone;
+                            incCallWindow.Name = caller_name;
+                            incCallWindow.Address = address;
+                            incCallWindow.Call = this.call;
+                            incCallWindow.SoftPhone = this.softphone;
+                            incCallWindow.Show();
+                        });
+#warning WcfCall
+                        //Get data about caller
+                        try
+                        {
+                            var clientInfo = WcfClient.GetClinetInformation(phone);
+                            InvokeGUIThread(() =>
+                            {
+                                incCallWindow.SetAttributes(clientInfo.Phone, clientInfo.Name, clientInfo.Address);
+                            });
+                        }
+                        catch (Exception)
+                        {
 
-                    // write incoming call record
-                    if (recordToDataBase == null)
-                        recordToDataBase = new Classes.CallRecord();
+                        }
 
-                    recordToDataBase.isIncoming = 1;
+                        // write incoming call record
+                        if (recordToDataBase == null)
+                            recordToDataBase = new Classes.CallRecord();
+
+                        this.recordToDataBase.isIncoming = 1;
+                    });
                 }
             }
         }
-
-        
 
         private void softphone_ErrorEvent(Call call, Phone.Error error)
         {

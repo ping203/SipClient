@@ -16,8 +16,8 @@
                     <GradientStop Color="White" Offset="0.6"></GradientStop>
                 </LinearGradientBrush>
             </Rectangle.Fill>
-        </Rectangle>       
-        
+        </Rectangle>
+
         <!--Menu-->
         <Menu VerticalAlignment="Top" HorizontalAlignment="Right" Background="{x:Null}">
             <!-- right button set -->
@@ -32,14 +32,41 @@
                 </MenuItem.Icon>
             </MenuItem>
         </Menu>
-        
+
         <Label FontSize="16" Content="Статистика звонков" HorizontalAlignment="Center" Margin="0,-5,0,0"></Label>
-        
+
         <Border Background="White" Margin="0,20,0,10">
             <StackPanel>
-                <DataGrid x:Name="dgvCalls" AutoGenerateColumns="True" CanUserReorderColumns="False" CanUserResizeColumns="False" CanUserSortColumns="False" ItemsSource="{Binding}" CanUserResizeRows="False" />
+                <DataGrid
+                    x:Name="dgvCalls" AutoGenerateColumns="True" CanUserReorderColumns="False"
+                    CanUserResizeColumns="False" CanUserSortColumns="False" 
+                    ItemsSource="{Binding}" CanUserResizeRows="False">
+                    <DataGrid.Columns>
+                        <!--Id Column-->
+                        <DataGridTextColumn Width="30" Binding="{Binding}" Header="Id">
+                        </DataGridTextColumn>
+                        <!--Caller phone column-->
+                        <DataGridTextColumn MinWidth="60" Binding="{Binding}" Header="Телефон">
+                        </DataGridTextColumn>
+                        <!--Call direction Image-->
+                        <DataGridTemplateColumn Width="80" Header="Тип звонка">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <Image Source="{Binding}"/>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+                        <!--Column call start time-->
+                        <DataGridTextColumn MinWidth="120" Binding="{Binding}" Header="Начало">
+                        </DataGridTextColumn>
+                        <!--Column call end time-->
+                        <DataGridTextColumn MinWidth="120" Binding="{Binding}" Header="Конец">
+                        </DataGridTextColumn>
+                    </DataGrid.Columns>
+
+                </DataGrid>
             </StackPanel>
         </Border>
-        
+
     </Grid>
 </Window>

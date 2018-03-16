@@ -129,9 +129,9 @@ namespace SipClient
                     password = Convert.ToString(xRoot["Default"]["Password"].InnerText);
                     ignoreFlag = Convert.ToBoolean(xRoot["Default"].Attributes["Ignore"].Value);
 
-                    MSQ.MessageQueueFactory.PathToOrdersMQ = Convert.ToString(xRoot["Default"]["MessageQueue"]["Orders"].Attributes["Path"].Value);
+                    //MSQ.MessageQueueFactory.PathToOrdersMQ = Convert.ToString(xRoot["Default"]["MessageQueue"]["Orders"].Attributes["Path"].Value);
 
-                    MSQ.MessageQueueFactory.PathToSipClientMQ = Convert.ToString(xRoot["Default"]["MessageQueue"]["SipClient"].Attributes["Path"].Value);
+                    //MSQ.MessageQueueFactory.PathToSipClientMQ = Convert.ToString(xRoot["Default"]["MessageQueue"]["SipClient"].Attributes["Path"].Value);
                 }
             }
             catch (Exception ex)

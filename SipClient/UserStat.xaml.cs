@@ -27,11 +27,10 @@ namespace SipClient
 
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
-            Task.Factory.StartNew(() =>
-            {
-                DataTable tab = Classes.Records.GetDataTable("select * from calls");
-                ProcessTable(tab);
-            });    
+
+            DataTable tab = Classes.Records.GetDataTable("select * from calls");
+            ProcessTable(tab);
+
         }
 
         /// <summary>
@@ -50,14 +49,36 @@ namespace SipClient
                 InvokeGUIThread(() =>
                 {
                     MessageBox.Show("Can't load calls.db");
+                    this.Close();
                 });
                 return;
             }
 
-            // process calls table
+            // Create special functions
+            Func<DataRow, String, DateTime> getCallTime = (DataRow row, String name) =>
+            {
+                var s = Convert.ToString(row[name]);
+                return (!String.IsNullOrEmpty(s)) ? Convert.ToDateTime(s) : new DateTime();
+            };
+
+            // processing parallel
+            int id = 0;
+            var source = (from row in tab.AsEnumerable().AsParallel()
+                          select new DisplayedCell()
+                          {
+                              Id = ++id,
+                              Phone = row["Phone"].ToString(),
+                              StatusImage = (Convert.ToInt32(row["isIncoming"]) == 1) ?
+                                 new BitmapImage(new Uri("/SipClient;component/Resources/inc_call.png", UriKind.Relative))
+                                 : new BitmapImage(new Uri("/SipClient;component/Resources/out_call.png", UriKind.Relative)),
+                              CallStart = getCallTime(row, "TimeStart"),
+                              CallEnd = getCallTime(row, "TimeEnd"),
+                          }).OrderBy(elem => elem.Id).ToList(); ;
+
+            // set dgvCalls source
             InvokeGUIThread(() =>
             {
-                dgvCalls.SetBinding(ItemsControl.ItemsSourceProperty, new Binding { Source = tab });
+                dgvCalls.SetBinding(ItemsControl.ItemsSourceProperty, new Binding { Source = source });
             });
         }
 
@@ -74,6 +95,16 @@ namespace SipClient
         private void btnCloseClick(object sender, RoutedEventArgs e)
         {
             this.Close();
+        }
+
+        // inherieted class, define cell of DataGrid
+        private class DisplayedCell
+        {
+            public int Id { get; set; }
+            public string Phone { get; set; }
+            public BitmapImage StatusImage { get; set; }
+            public DateTime CallStart { get; set; }
+            public DateTime CallEnd { get; set; }
         }
     }
 }

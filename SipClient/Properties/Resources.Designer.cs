@@ -131,6 +131,16 @@ namespace SipClient.Properties {
         /// <summary>
         ///   Looks up a localized resource of type System.Drawing.Bitmap.
         /// </summary>
+        internal static System.Drawing.Bitmap inc_call {
+            get {
+                object obj = ResourceManager.GetObject("inc_call", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
         internal static System.Drawing.Bitmap key {
             get {
                 object obj = ResourceManager.GetObject("key", resourceCulture);
@@ -178,11 +188,31 @@ namespace SipClient.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap out_call {
+            get {
+                object obj = ResourceManager.GetObject("out_call", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to ./SipClient/Settings.xml.
         /// </summary>
         internal static string PathToSettings {
             get {
                 return ResourceManager.GetString("PathToSettings", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap rej_call {
+            get {
+                object obj = ResourceManager.GetObject("rej_call", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
             }
         }
         
