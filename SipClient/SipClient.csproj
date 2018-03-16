@@ -70,6 +70,10 @@
     <Reference Include="MSQ, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\..\dev\MSQ\bin\Debug\MSQ.dll</HintPath>
     </Reference>
+    <Reference Include="MySql.Data, Version=6.9.5.0, Culture=neutral, PublicKeyToken=c5687fc88969c44d, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\dev\MySql.Data.dll</HintPath>
+    </Reference>
     <Reference Include="sipdotnet, Version=0.0.0.0, Culture=neutral, processorArchitecture=AMD64">
       <HintPath>..\..\sipdotnet\bin\x86\Debug\sipdotnet.dll</HintPath>
     </Reference>
@@ -100,6 +104,7 @@
       <SubType>Designer</SubType>
     </ApplicationDefinition>
     <Compile Include="Classes\CallRecord.cs" />
+    <Compile Include="Classes\MainDataBase.cs" />
     <Compile Include="Classes\Records.cs" />
     <Compile Include="Properties\Resources.Designer.cs">
       <AutoGen>True</AutoGen>

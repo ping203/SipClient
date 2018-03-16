@@ -51,7 +51,8 @@ namespace SipClient
             soundPlayer.PlayLooping();
 #warning ex1
             SoftPhone.GetMediaHandler.EchoCancellation(Call, true);
-            // Load Inforamtion
+            // Load Information
+            
             SetAttributes(Phone, Name, Address);
         }
 

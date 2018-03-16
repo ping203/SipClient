@@ -12,6 +12,7 @@ using System.Windows.Media.Animation;
 using System.Windows.Media.Imaging;
 using System.Windows.Threading;
 using sipdotnet;
+using System.Diagnostics;
 
 namespace SipClient
 {
@@ -242,6 +243,7 @@ namespace SipClient
                 this.txtCallStatus.Text = "Входящий";
                 this.PhoneIcon.Source = new BitmapImage(new Uri("/SipClient;component/Resources/call-end.png", UriKind.Relative));
             });
+
             // Reject incoming call, if we have active
             if (this.call != null)
             {
@@ -254,19 +256,45 @@ namespace SipClient
                 // create incoming call window
                 if (this.call != null)
                 {
+                    string phone = GetPhone(this.call.GetFrom());
+                    string caller_name = GetCallId(this.call.GetFrom());
+                    string address = String.Empty;
+
+#warning MysqlCall
+                    //Get data about caller
+                    try
+                    {
+                       var tabCallerInfo = Classes.MainDataBase.GetDataTable(
+                       string.Format("select cust.order_id, hat.customer_name as name, cust.customer_id as phone, cust.street,cust.house, cust.entrance, cust.floor, cust.apartment, cust.address_text from customers_addresses as cust , orders_hat as hat where hat.customer = '{0}' and cust.customer_id = '{0}' limit 1;", phone));
+                       // Set new values to caller_name , address
+                       if (tabCallerInfo != null && tabCallerInfo.Rows.Count > 0)
+                       {
+                           caller_name = Convert.ToString(tabCallerInfo.Rows[0]["name"]);
+                           address = Convert.ToString(tabCallerInfo.Rows[0]["address_text"]);
+                       }
+                    }
+                    catch (Exception e)
+                    {
+                        Debug.WriteLine(e.Message);
+                    }                   
+
+                    // show incoming call window
                     InvokeGUIThread(() =>
                     {
                         // Create new incoming window
                         incCallWindow = new IncomingCallWindow();
-                        incCallWindow.Phone = GetPhone(this.call.GetFrom());
-                        incCallWindow.Name = GetCallId(this.call.GetFrom());
+                        incCallWindow.Phone = phone;
+                        incCallWindow.Name = caller_name;
+                        incCallWindow.Address = address;
                         incCallWindow.Call = this.call;
                         incCallWindow.SoftPhone = this.softphone;
                         incCallWindow.Show();
-                    });
+                    });                    
                     //send message to orders
                     //SendMessageToOrders();
+                    
 
+                    // write incoming call record
                     if (recordToDataBase == null)
                         recordToDataBase = new Classes.CallRecord();
 
@@ -274,6 +302,8 @@ namespace SipClient
                 }
             }
         }
+
+        
 
         private void softphone_ErrorEvent(Call call, Phone.Error error)
         {

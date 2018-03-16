@@ -100,6 +100,15 @@ namespace SipClient.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Server=127.0.0.1;Database=db_orders;Uid=root;Pwd=Teor19;.
+        /// </summary>
+        internal static string ConnectionStringCentralDB {
+            get {
+                return ResourceManager.GetString("ConnectionStringCentralDB", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized resource of type System.Drawing.Icon similar to (Icon).
         /// </summary>
         internal static System.Drawing.Icon icon {

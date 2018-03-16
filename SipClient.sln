@@ -12,8 +12,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		TraceAndTestImpact.testsettings = TraceAndTestImpact.testsettings
 	EndProjectSection
 EndProject
-Project("{54435603-DBB4-11D2-8724-00A0C9A8B90C}") = "SipClientInstaller", "SipClientInstaller\SipClientInstaller.vdproj", "{3E94A9C5-4F56-427D-A140-250E1970F2CF}"
-EndProject
 Global
 	GlobalSection(TestCaseManagementSettings) = postSolution
 		CategoryFile = SipClient.vsmdi
@@ -47,12 +45,6 @@ Global
 		{78641AF5-B96A-4B54-A332-D52EAD8C191A}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
 		{78641AF5-B96A-4B54-A332-D52EAD8C191A}.Release|Mixed Platforms.Build.0 = Release|Any CPU
 		{78641AF5-B96A-4B54-A332-D52EAD8C191A}.Release|x86.ActiveCfg = Release|x86
-		{3E94A9C5-4F56-427D-A140-250E1970F2CF}.Debug|Any CPU.ActiveCfg = Debug
-		{3E94A9C5-4F56-427D-A140-250E1970F2CF}.Debug|Mixed Platforms.ActiveCfg = Debug
-		{3E94A9C5-4F56-427D-A140-250E1970F2CF}.Debug|x86.ActiveCfg = Debug
-		{3E94A9C5-4F56-427D-A140-250E1970F2CF}.Release|Any CPU.ActiveCfg = Release
-		{3E94A9C5-4F56-427D-A140-250E1970F2CF}.Release|Mixed Platforms.ActiveCfg = Release
-		{3E94A9C5-4F56-427D-A140-250E1970F2CF}.Release|x86.ActiveCfg = Release
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -170,4 +170,7 @@
   <data name="ConnectionStringCalls" xml:space="preserve">
     <value>Data Source=.\calls.db</value>
   </data>
+  <data name="ConnectionStringCentralDB" xml:space="preserve">
+    <value>Server=127.0.0.1;Database=db_orders;Uid=root;Pwd=Teor19;</value>
+  </data>
 </root>
