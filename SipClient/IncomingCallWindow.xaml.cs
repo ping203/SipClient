@@ -11,6 +11,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
+using System.Threading.Tasks;
 
 namespace SipClient
 {
@@ -32,12 +33,18 @@ namespace SipClient
 
         private void Window_MouseDown(object sender, MouseButtonEventArgs e)
         {
-            this.DragMove();
+            if (Mouse.LeftButton == MouseButtonState.Pressed)
+                this.DragMove();
         }
 
         private void btnCloseClick(object sender, RoutedEventArgs e)
         {
             this.Close();
+        }
+
+        private void InvokeGUIThread(Action action)
+        {
+            Dispatcher.Invoke(action, null);
         }
 
         public string Name { get; set; }
@@ -49,11 +56,31 @@ namespace SipClient
             // Play Sound
             soundPlayer.Stream = Properties.Resources.signal;
             soundPlayer.PlayLooping();
-#warning ex1
             SoftPhone.GetMediaHandler.EchoCancellation(Call, true);
-            // Load Information
-            
-            SetAttributes(Phone, Name, Address);
+
+            // Load Information from mysql
+            Task.Factory.StartNew(() =>
+            {
+                var tabCallerInfo = Classes.MainDataBase.GetDataTable(
+                        string.Format(
+                        @"select hat.order_id,hat.customer,hat.customer_name,addr.address_text
+                        from orders_hat hat left join customers_addresses addr on hat.order_id=addr.order_id
+                        where hat.customer = '{0}' order by date_sm desc limit 1;", Phone));
+                // Set new values to caller_name , address
+                if (tabCallerInfo != null && tabCallerInfo.Rows.Count > 0)
+                {
+                    string caller_name = Convert.ToString(tabCallerInfo.Rows[0]["name"]);
+                    string address = Convert.ToString(tabCallerInfo.Rows[0]["address_text"]);
+
+                    InvokeGUIThread(() => { SetAttributes(Phone, caller_name, address); });
+                }
+                else
+                {
+                    InvokeGUIThread(() => { SetAttributes(Phone, Name, Address); });
+                }
+            });
+
+            //InvokeGUIThread(() => { SetAttributes(Phone, Name, Address); });
         }
 
         private void btnAccept_Click(object sender, RoutedEventArgs e)

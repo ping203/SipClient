@@ -12,6 +12,9 @@ using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 using System.Data;
 using System.Threading.Tasks;
+using System.Diagnostics;
+using System.Drawing;
+using System.Windows.Interop;
 
 namespace SipClient
 {
@@ -20,25 +23,29 @@ namespace SipClient
     /// </summary>
     public partial class UserStat : Window
     {
-        public UserStat()
+        private static UserStat instance;
+                 
+        public static UserStat GetInstance
+        {
+            get
+            {
+                if (instance == null)
+                {
+                    instance = new UserStat();
+                }
+                return instance;
+            }
+        }
+
+        private UserStat()
         {
             InitializeComponent();
         }
 
-        private void Window_Loaded(object sender, RoutedEventArgs e)
+        public void ReloadTable()
         {
-
             DataTable tab = Classes.Records.GetDataTable("select * from calls");
             ProcessTable(tab);
-
-        }
-
-        /// <summary>
-        /// The controls of the Windows Form applications can only be modified on the GUI thread. This method grants access to the GUI thread.
-        /// </summary>
-        private void InvokeGUIThread(Action action)
-        {
-            Dispatcher.Invoke(action, null);
         }
 
         private void ProcessTable(DataTable tab)
@@ -46,11 +53,8 @@ namespace SipClient
             if (tab == null)
             {
                 // Load empty table
-                InvokeGUIThread(() =>
-                {
-                    MessageBox.Show("Can't load calls.db");
-                    this.Close();
-                });
+                MessageBox.Show("Can't load calls.db");
+                this.Hide();
                 return;
             }
 
@@ -60,31 +64,26 @@ namespace SipClient
                 var s = Convert.ToString(row[name]);
                 return (!String.IsNullOrEmpty(s)) ? Convert.ToDateTime(s) : new DateTime();
             };
-
             // processing parallel
             int id = 0;
             var source = (from row in tab.AsEnumerable().AsParallel()
                           select new DisplayedCell()
                           {
-                              Id = ++id,
-                              Phone = row["Phone"].ToString(),
-                              StatusImage = (Convert.ToInt32(row["isIncoming"]) == 1) ?
-                                 new BitmapImage(new Uri("/SipClient;component/Resources/inc_call.png", UriKind.Relative))
-                                 : new BitmapImage(new Uri("/SipClient;component/Resources/out_call.png", UriKind.Relative)),
-                              CallStart = getCallTime(row, "TimeStart"),
-                              CallEnd = getCallTime(row, "TimeEnd"),
-                          }).OrderBy(elem => elem.Id).ToList(); ;
+                              id = ++id,
+                              phone = row["Phone"].ToString(),
+                              bitmap = (Convert.ToInt32(row["isIncoming"]) == 1) ? 
+                                Properties.Resources.inc_call : Properties.Resources.out_call ,
+                              callStart = getCallTime(row, "TimeStart") ,
+                              callEnd = getCallTime(row, "TimeEnd") ,
+                          }).OrderBy(elem => elem.id);
 
-            // set dgvCalls source
-            InvokeGUIThread(() =>
-            {
-                dgvCalls.SetBinding(ItemsControl.ItemsSourceProperty, new Binding { Source = source });
-            });
+            this.dgvCalls.ItemsSource = source;
         }
 
         private void Window_MouseDown(object sender, MouseButtonEventArgs e)
         {
-            this.DragMove();
+            if (Mouse.LeftButton == MouseButtonState.Pressed)
+                this.DragMove();
         }
 
         private void btnMinimizeClick(object sender, RoutedEventArgs e)
@@ -94,17 +93,38 @@ namespace SipClient
 
         private void btnCloseClick(object sender, RoutedEventArgs e)
         {
-            this.Close();
+            this.Hide();
+        }
+
+        private void dgvCalls_MouseDoubleClick(object sender, MouseButtonEventArgs e)
+        {
+            if (e.LeftButton == MouseButtonState.Pressed)
+            {
+                MessageBox.Show("left presed!");
+            }
         }
 
         // inherieted class, define cell of DataGrid
         private class DisplayedCell
         {
-            public int Id { get; set; }
-            public string Phone { get; set; }
-            public BitmapImage StatusImage { get; set; }
-            public DateTime CallStart { get; set; }
-            public DateTime CallEnd { get; set; }
+            public int id { get; set; }
+            public string phone { get; set; }
+            public Bitmap bitmap { get; set; }
+            public DateTime callStart { get; set; }
+            public DateTime callEnd { get; set; }
+
+            public ImageSource img
+            {
+                get
+                {
+                    return Imaging.CreateBitmapSourceFromHBitmap(
+                        bitmap.GetHbitmap(),
+                        IntPtr.Zero,
+                        Int32Rect.Empty,
+                        BitmapSizeOptions.FromEmptyOptions());
+                }
+            }
+
         }
     }
 }

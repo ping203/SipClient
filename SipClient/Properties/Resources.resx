@@ -154,8 +154,8 @@
   <data name="telephone" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\telephone.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
-  <data name="PathToSettings" xml:space="preserve">
-    <value>./SipClient/Settings.xml</value>
+  <data name="SettingsFileName" xml:space="preserve">
+    <value>/SipClient/Settings.xml</value>
     <comment>XML File with program settings</comment>
   </data>
   <data name="MessageQueuePath" xml:space="preserve">
@@ -167,11 +167,11 @@
   <data name="mic_on" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\mic_on.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
-  <data name="ConnectionStringCalls" xml:space="preserve">
-    <value>Data Source=.\calls.db</value>
+  <data name="CallerDataBaseFileName" xml:space="preserve">
+    <value>/SipClient/calls.db</value>
   </data>
   <data name="ConnectionStringCentralDB" xml:space="preserve">
-    <value>Server=127.0.0.1;Database=db_orders;Uid=root;Pwd=Teor19;</value>
+    <value>Server=192.168.0.7;Database=db_orders;Uid=root;Pwd=Teor19;</value>
   </data>
   <data name="inc_call" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\inc_call.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>

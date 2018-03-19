@@ -25,9 +25,9 @@
             <!--Menu-->
             <Menu VerticalAlignment="Top" HorizontalAlignment="Left" Background="{x:Null}">
                 <!-- Login menu -->
-                <MenuItem Height="24" Width="24" HorizontalAlignment="Left">
+                <MenuItem Height="24" Width="24" HorizontalAlignment="Left" Click="LoginMenuClick">
                     <MenuItem.Icon>
-                        <Image Source="/SipClient;component/Resources/key.png"/>
+                        <Image Source="/SipClient;component/Resources/key.png" />
                     </MenuItem.Icon>
                 </MenuItem>
             </Menu>

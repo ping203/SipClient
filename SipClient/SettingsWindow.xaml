@@ -2,9 +2,9 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Background="{x:Null}" AllowsTransparency="True" WindowStyle="None"
-        Title="CallStat"
+        Title="Settings" Loaded="Window_Loaded"
          Icon="/SipClient;component/Resources/icon.ico"
-        WindowStartupLocation="CenterOwner" 
+        WindowStartupLocation="CenterScreen" 
         MouseDown="Window_MouseDown" ResizeMode="NoResize" mc:Ignorable="d" xmlns:d="http://schemas.microsoft.com/expression/blend/2008" xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" d:DesignHeight="202" SizeToContent="WidthAndHeight">
     <Border Background="{x:Null}" BorderBrush="#4a71ef" BorderThickness="1">
         <Grid>
@@ -46,7 +46,6 @@
                             <Border BorderBrush="#575757" BorderThickness="2" Padding="5,5,0,5" Margin="5,5,0,5">
                                 <StackPanel>
                                     <TextBlock Text="Хост адресс"  Margin="5"></TextBlock>
-
                                     <TextBlock Text="Логин"  Margin="5"></TextBlock>
                                     <TextBlock Text="Пароль"  Margin="5"></TextBlock>
                                 </StackPanel>
@@ -55,7 +54,7 @@
                                 <StackPanel>
                                     <TextBox x:Name="txtHostAddress" Margin="2"></TextBox>
                                     <TextBox x:Name="txtLogin" Margin="2"></TextBox>
-                                    <TextBox x:Name="txtPassword" Margin="2"></TextBox>
+                                    <PasswordBox x:Name="txtPassword" Margin="2" PasswordChar="*"></PasswordBox>
                                 </StackPanel>
                             </Border>
                         </Grid>

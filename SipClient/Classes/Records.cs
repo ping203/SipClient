@@ -12,6 +12,7 @@ namespace SipClient.Classes
     class Records
     {
         private static int MAX_RECORDS = 25;
+        private static string _CONN_STR_TO_SQLITE_DB = string.Concat("Data Source=", Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), Properties.Resources.CallerDataBaseFileName);
 
         /// <summary>
         /// Add record to dataase
@@ -20,7 +21,7 @@ namespace SipClient.Classes
         {
             string sql = string.Format("insert into calls(Phone, TimeStart, TimeEnd, isIncoming) values('{0}' ,'{1}' ,'{2}' ,{3})", call.Phone, call.TimeStart, call.TimeEnd, call.isIncoming);
 
-            using (var connection = new SQLiteConnection(Properties.Resources.ConnectionStringCalls))
+            using (var connection = new SQLiteConnection(_CONN_STR_TO_SQLITE_DB))
             {
                 connection.Open();
                 // check connection state
@@ -87,7 +88,7 @@ namespace SipClient.Classes
         {
             DataTable dt = new DataTable();
 
-            using (var c = new SQLiteConnection(Properties.Resources.ConnectionStringCalls))
+            using (var c = new SQLiteConnection(_CONN_STR_TO_SQLITE_DB))
             {
                 c.Open();
 

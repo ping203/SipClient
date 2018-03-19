@@ -20,14 +20,29 @@ namespace SipClient
     /// </summary>
     public partial class SettingsWindow : Window
     {
+        private static string password = String.Empty;
+        private static string login = String.Empty;
+        private static string host = String.Empty;
+        public static string PathToConfigs = string.Concat(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), Properties.Resources.SettingsFileName);
+
         public SettingsWindow()
         {
             InitializeComponent();
         }
 
+        private void Window_Loaded(object sender, RoutedEventArgs e)
+        {
+            LoadSettings(PathToConfigs);
+
+            this.txtHostAddress.Text = host;
+            this.txtLogin.Text = login;
+            this.txtPassword.Password = password;
+        }
+
         private void Window_MouseDown(object sender, MouseButtonEventArgs e)
         {
-            this.DragMove();
+            if (Mouse.LeftButton == MouseButtonState.Pressed)
+                this.DragMove();
         }
 
         private void btnCloseClick(object sender, RoutedEventArgs e)
@@ -37,15 +52,17 @@ namespace SipClient
 
         private void btnAppend_Click(object sender, RoutedEventArgs e)
         {
-            string path = System.IO.Path.GetFullPath(Properties.Resources.PathToSettings);
+            SaveSettings(PathToConfigs);
+            this.DialogResult = true;
+            this.Close();
+        }
 
-            if (!System.IO.File.Exists(path))
-                path = @"./Settings.xml";
-
+        public void SaveSettings(string path)
+        {
             string host = txtHostAddress.Text;
             string login = txtLogin.Text;
-            string password = txtPassword.Text;
-            
+            string password = txtPassword.Password;
+
             if (host == null && login == null && password == null)
                 return;
 
@@ -63,14 +80,37 @@ namespace SipClient
 
                 xDoc.DocumentElement["Default"]["Password"].InnerText = password;
 
-                xDoc.Save(System.IO.Path.GetFullPath(Properties.Resources.PathToSettings));
+                xDoc.Save(SettingsWindow.PathToConfigs);
             }
             catch (Exception exc)
             {
                 MessageBox.Show(exc.Message);
             }
-            this.DialogResult = true;
-            this.Close();
+        }
+
+        public static void LoadSettings(string path)
+        {
+            try
+            {
+                XmlDocument xml_settings = new XmlDocument();
+                using (FileStream fs = new FileStream(path, FileMode.Open, FileAccess.Read))
+                {
+                    xml_settings.Load(fs);
+
+                    var xRoot = xml_settings.DocumentElement;
+                    host = Convert.ToString(xRoot["Default"]["Host"].Attributes.GetNamedItem("Ip").Value);
+                    login = Convert.ToString(xRoot["Default"]["Login"].InnerText);
+                    password = Convert.ToString(xRoot["Default"]["Password"].InnerText);
+
+                    PhoneWindow.Host = host;
+                    PhoneWindow.Login = login;
+                    PhoneWindow.Password = password;
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.ToString());
+            }
         }
     }
 }

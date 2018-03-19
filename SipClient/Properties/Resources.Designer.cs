@@ -81,6 +81,15 @@ namespace SipClient.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to /SipClient/calls.db.
+        /// </summary>
+        internal static string CallerDataBaseFileName {
+            get {
+                return ResourceManager.GetString("CallerDataBaseFileName", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized resource of type System.Drawing.Bitmap.
         /// </summary>
         internal static System.Drawing.Bitmap close {
@@ -91,16 +100,7 @@ namespace SipClient.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Data Source=.\calls.db.
-        /// </summary>
-        internal static string ConnectionStringCalls {
-            get {
-                return ResourceManager.GetString("ConnectionStringCalls", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Server=127.0.0.1;Database=db_orders;Uid=root;Pwd=Teor19;.
+        ///   Looks up a localized string similar to Server=192.168.0.7;Database=db_orders;Uid=root;Pwd=Teor19;.
         /// </summary>
         internal static string ConnectionStringCentralDB {
             get {
@@ -198,15 +198,6 @@ namespace SipClient.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to ./SipClient/Settings.xml.
-        /// </summary>
-        internal static string PathToSettings {
-            get {
-                return ResourceManager.GetString("PathToSettings", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Looks up a localized resource of type System.Drawing.Bitmap.
         /// </summary>
         internal static System.Drawing.Bitmap rej_call {
@@ -223,6 +214,15 @@ namespace SipClient.Properties {
             get {
                 object obj = ResourceManager.GetObject("settings_icon", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to /SipClient/Settings.xml.
+        /// </summary>
+        internal static string SettingsFileName {
+            get {
+                return ResourceManager.GetString("SettingsFileName", resourceCulture);
             }
         }
         

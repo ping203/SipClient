@@ -13,6 +13,8 @@ using System.Windows.Media.Imaging;
 using System.Windows.Threading;
 using sipdotnet;
 using System.Diagnostics;
+using System.Xml;
+using System.IO;
 
 namespace SipClient
 {
@@ -21,9 +23,14 @@ namespace SipClient
     /// </summary>
     public partial class PhoneWindow : Window
     {
-        private Phone softphone;
+        private static Phone softphone;
         private Account account;
         private Call call;
+
+        public static string Login { get; set; }
+        public static string Host { get; set; }
+        public static string Password { get; set; }
+        public static bool IgnoreFlag { get; set; }
 
         private const string _PHONE_NUMBER_HELP = "Введите номер";
 
@@ -38,6 +45,9 @@ namespace SipClient
         {
             // Initialize all controls
             InitializeComponent();
+
+            //Load configs
+            SettingsWindow.LoadSettings(SettingsWindow.PathToConfigs);
 
             this.txtPhoneNumber.Text = _PHONE_NUMBER_HELP;
             this.SpeakerOff = false;
@@ -54,8 +64,6 @@ namespace SipClient
                 // Create Client connection
                 InitializeWcfClient();
             });
-            // Set Fields
-            miUsername.Header = Login;
         }
 
         private void InitializeWcfClient()
@@ -77,6 +85,7 @@ namespace SipClient
             {
                 account = new Account(Login, Password, Host);
                 softphone = new Phone(account);
+
                 // Add Events
                 softphone.ErrorEvent += new Phone.OnError(softphone_ErrorEvent);
                 softphone.IncomingCallEvent += new Phone.OnIncomingCall(softphone_IncomingCallEvent);
@@ -87,6 +96,12 @@ namespace SipClient
 
                 // Connect to server
                 softphone.Connect();
+
+                // Set Fields
+                InvokeGUIThread(() =>
+                {
+                    miUsername.Header = Login;
+                });
 
                 // Check sound devices
                 this.CheckSoundDevices();
@@ -161,6 +176,8 @@ namespace SipClient
                 TimerEnable();
             });
 
+            this.call = call;
+
             if (recordToDataBase == null)
                 recordToDataBase = new Classes.CallRecord();
             recordToDataBase.TimeStart = DateTime.Now.ToString();
@@ -223,7 +240,7 @@ namespace SipClient
                             incCallWindow.Name = caller_name;
                             incCallWindow.Address = address;
                             incCallWindow.Call = this.call;
-                            incCallWindow.SoftPhone = this.softphone;
+                            incCallWindow.SoftPhone = softphone;
                             incCallWindow.Show();
                         });
 #warning WcfCall
@@ -298,8 +315,8 @@ namespace SipClient
         {
             var micValue = (this.micSlider.Value);
             var speakerValue = (this.volumeSlider.Value);
-            var currentSetMicValue = Math.Ceiling(this.softphone.GetMediaHandler.GetMicrophoneSound(call) * 100);
-            var currentSetSpeakerValue = Math.Ceiling(this.softphone.GetMediaHandler.GetSpeakerSound(call) * 100);
+            var currentSetMicValue = Math.Ceiling(softphone.GetMediaHandler.GetMicrophoneSound(call) * 100);
+            var currentSetSpeakerValue = Math.Ceiling(softphone.GetMediaHandler.GetSpeakerSound(call) * 100);
 
             // set new mic value 
             if (micValue - currentSetMicValue != 0)
@@ -428,6 +445,9 @@ namespace SipClient
         /// <param name="phoneNumber"></param>
         private void CallTo(string phoneNumber)
         {
+            if (this.call != null)
+                return;
+
             // Check phone number 
             if (!IsPhoneNumber(phoneNumber) || String.IsNullOrEmpty(phoneNumber))
             {
@@ -499,10 +519,6 @@ namespace SipClient
 
         private void Window_KeyDown(object sender, KeyEventArgs e)
         {
-            // Избегаем повторного ввода
-            if (txtPhoneNumber.IsFocused)
-                return;
-
             switch (e.Key)
             {
                 // Remove last characters
@@ -551,6 +567,13 @@ namespace SipClient
                         txtPhoneNumber.Text += (Convert.ToInt16(e.Key) - 34);
                     }
                     break;
+                // calling to number
+                case Key.Enter:
+                    {
+                        string phoneNumber = txtPhoneNumber.Text;
+                        CallTo(phoneNumber);
+                    }
+                    break;
             }
         }
 
@@ -566,12 +589,9 @@ namespace SipClient
 
         private void Window_MouseDown(object sender, MouseButtonEventArgs e)
         {
-            this.DragMove();
+            if (Mouse.LeftButton == MouseButtonState.Pressed)
+                this.DragMove();
         }
-
-        public string Login { get; set; }
-        public string Host { get; set; }
-        public string Password { get; set; }
 
         private static bool createNewOrderFlag;
 
@@ -678,11 +698,10 @@ namespace SipClient
         private void Window_Closing(object sender, CancelEventArgs e)
         {
             // close all conenctions
-            this.softphone.Disconnect();
+            softphone.Disconnect();
             //OrdersQueue.ReceiveCompleted -= new ReceiveCompletedEventHandler(OrdersQueue_ReceiveCompleted);
             //SipClientQueue.Dispose();
             //OrdersQueue.Dispose();
-
             // application shutdown
             App.Current.Shutdown();
         }
@@ -714,7 +733,8 @@ namespace SipClient
         // Show user call statistic
         private void miUsername_Click(object sender, RoutedEventArgs e)
         {
-            UserStat userStat = new UserStat();
+            UserStat userStat = UserStat.GetInstance;
+            userStat.ReloadTable();
             userStat.Show();
         }
 
@@ -757,7 +777,6 @@ namespace SipClient
                     timeSpan += timer.Interval;
                     lblTime.Content = timeSpan.ToString(@"mm\:ss\:ff");
                 });
-
             });
             timer.Start();
         }
@@ -789,6 +808,19 @@ namespace SipClient
                 animTimer.Stop();
             };
             animTimer.Start();
+        }
+
+        private void LoginMenuClick(object sender, RoutedEventArgs e)
+        {
+            SettingsWindow settings = new SettingsWindow();
+            if (settings.ShowDialog() == true)
+            {
+                Task.Factory.StartNew(() =>
+                {
+                    SettingsWindow.LoadSettings(SettingsWindow.PathToConfigs);
+                    InitializeSoftphone(); ;
+                });
+            }
         }
     }
 }

@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Data;
 using MySql.Data.MySqlClient;
+using System.Windows;
 
 namespace SipClient.Classes
 {
@@ -31,7 +32,9 @@ namespace SipClient.Classes
                 }
             }
             catch (Exception e)
-            { }
+            {
+                MessageBox.Show(e.Message + Environment.NewLine + e.StackTrace);
+            }
 
             return dt;
         }
