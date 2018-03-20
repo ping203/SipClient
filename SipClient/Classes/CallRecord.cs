@@ -4,14 +4,17 @@ using System.Data.SqlClient;
 using System.Data.SQLite;
 using System.Data.Common;
 using System.Data;
+using System;
 namespace SipClient.Classes
 {
     public class CallRecord
     {
         private string phone;
-        private string time_start;
-        private string time_end;
-        private int type = 0;
+        private DateTime time_start;
+        private DateTime time_end;
+        private bool incoming = false;
+        private bool outcoming = false;
+        private bool rejected = false;
 
         public string Phone
         {
@@ -22,7 +25,7 @@ namespace SipClient.Classes
             }
         }
 
-        public string TimeStart
+        public DateTime TimeStart
         {
             get { return time_start; }
             set
@@ -31,7 +34,7 @@ namespace SipClient.Classes
             }
         }
 
-        public string TimeEnd
+        public DateTime TimeEnd
         {
             get { return time_end; }
             set
@@ -40,12 +43,30 @@ namespace SipClient.Classes
             }
         }
 
-        public int isIncoming
+        public bool isIncoming
         {
-            get { return type; }
+            get { return incoming; }
             set
             {
-                type = value;
+                incoming = value;
+            }
+        }
+
+        public bool isOutcoming
+        {
+            get { return outcoming; }
+            set
+            {
+                outcoming = value;
+            }
+        }
+
+        public bool isRejected
+        {
+            get { return rejected; }
+            set
+            {
+                rejected = value;
             }
         }
     }

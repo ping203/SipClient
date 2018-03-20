@@ -15,6 +15,10 @@ using sipdotnet;
 using System.Diagnostics;
 using System.Xml;
 using System.IO;
+using System.Media;
+using System.Windows.Media;
+using System.Drawing;
+using System.Windows.Interop;
 
 namespace SipClient
 {
@@ -37,9 +41,28 @@ namespace SipClient
         // Record to DataBase
         private Classes.CallRecord recordToDataBase;
 
+        public Classes.CallRecord RecordToLocalDataBase
+        {
+            get
+            {
+                if (this.recordToDataBase == null)
+                    this.recordToDataBase = new Classes.CallRecord();
+                return this.recordToDataBase;
+            }
+        }
+
         public static WcfConnectionService.ServiceClient WcfClient;
 
-        private static IncomingCallWindow incCallWindow = null;
+        public static Func<string, bool> IsPhoneNumber = (string number) => Regex.Match(number, @"^((\+7|7|8)?([0-9]){4})?([0-9]{3})?([0-9]{3})$").Success;
+
+        private Func<string, string> GetCallId = (string sip) => Regex.Match(sip, @"[\\""](\w+)[\\""]").Groups[1].Value;
+
+        private Func<string, string> GetPhone = (string sip) => Regex.Match(sip, @"sip:(\d+)@").Groups[1].Value;
+
+        /// <summary>
+        /// return true if s is transfer phone number
+        /// </summary>
+        Func<string, bool> isTransferNumber = (s) => Regex.Match(s, @"^(#){1}").Success;
 
         public PhoneWindow()
         {
@@ -104,7 +127,15 @@ namespace SipClient
                 });
 
                 // Check sound devices
-                this.CheckSoundDevices();
+                try
+                {
+                    CheckSoundDevices();
+                }
+                catch (Exception e)
+                {
+                    MessageBox.Show(e.Message);
+                }
+
             }
             catch (Exception ex)
             {
@@ -112,57 +143,14 @@ namespace SipClient
             }
         }
 
+
+        #region Sofphone_Events
+
+        // Звонок завершился
         private void softphone_CallCompletedEvent(Call call)
         {
-            InvokeGUIThread(() =>
-                {
-                    // Incoming call
-                    if (incCallWindow != null)
-                    {
-                        // add record to db  
-                        try
-                        {
-                            recordToDataBase.Phone = incCallWindow.Phone;
-                            recordToDataBase.TimeEnd = DateTime.Now.ToString();
-                            Classes.Records.AddRecordToDataBase(recordToDataBase);
-                        }
-                        catch (Exception e)
-                        {
-                            MessageBox.Show(e.Message + Environment.NewLine + e.StackTrace);
-                        }
-                        // Close incoming call window
-                        incCallWindow.Close();
-                        incCallWindow = null;
-                    }
-                    else
-                    {
-                        // Outcoming call
-                        // add record to db  
-                        try
-                        {
-                            recordToDataBase.isIncoming = 0;
-                            recordToDataBase.Phone = txtPhoneNumber.Text;
-                            recordToDataBase.TimeEnd = DateTime.Now.ToString();
-                            Classes.Records.AddRecordToDataBase(recordToDataBase);
-                        }
-                        catch (Exception e)
-                        {
-                            MessageBox.Show(e.Message + Environment.NewLine + e.StackTrace);
-                        }
-                    }
+#warning НеобходимыПравки!
 
-                    // Update icons and text
-                    txtPhoneNumber.Text = _PHONE_NUMBER_HELP;
-                    txtCallStatus.Text = "Закончен";
-                    this.PhoneIcon.Source = new BitmapImage(new Uri("/SipClient;component/Resources/telephone.png", UriKind.Relative));
-
-                    // Disable Timer clockdown
-                    TimerDisable();
-                });
-
-            // make null current call, window, lastMessage
-            this.call = null;
-            //lastIncomingMessage = null;
         }
 
         private void softphone_CallActiveEvent(Call call)
@@ -170,17 +158,22 @@ namespace SipClient
             InvokeGUIThread(() =>
             {
                 this.txtCallStatus.Text = "Входящий";
-                this.PhoneIcon.Source = new BitmapImage(new Uri("/SipClient;component/Resources/call-end.png", UriKind.Relative));
+                this.PhoneIcon.Source = ImageSourceFromBitmap(Properties.Resources.call_end); // new BitmapImage(new Uri("/SipClient;component/Resources/call-end.png", UriKind.Relative));
 
                 // Enable timer clockdown
-                TimerEnable();
+                // TimerEnable();
+
+                // set new call volume
+                var volValue = this.volumeSlider.Value;
+                softphone.GetMediaHandler.SetSpeakerSound(this.call, (float)(volValue % 100));
+
+
             });
 
             this.call = call;
 
-            if (recordToDataBase == null)
-                recordToDataBase = new Classes.CallRecord();
-            recordToDataBase.TimeStart = DateTime.Now.ToString();
+            // write call start time
+            RecordToLocalDataBase.TimeStart = DateTime.Now;
         }
 
         private void softphone_PhoneDisconnectedEvent()
@@ -188,7 +181,7 @@ namespace SipClient
             InvokeGUIThread(() =>
             {
                 //set unavailable icon and text message
-                this.StatusIcon.Source = new BitmapImage(new Uri("/SipClient;component/Resources/inactive.png", UriKind.Relative));
+                this.StatusIcon.Source = ImageSourceFromBitmap(Properties.Resources.inactive);
                 txtConnectionStatus.Text = "Нет подключения!";
             });
         }
@@ -198,73 +191,96 @@ namespace SipClient
             InvokeGUIThread(() =>
             {
                 //set available icon and text message
-                this.PhoneIcon.Source = new BitmapImage(new Uri("/SipClient;component/Resources/telephone.png", UriKind.Relative));
-                this.StatusIcon.Source = new BitmapImage(new Uri("/SipClient;component/Resources/active.png", UriKind.Relative));
+                this.PhoneIcon.Source = ImageSourceFromBitmap(Properties.Resources.telephone);
+                this.StatusIcon.Source = ImageSourceFromBitmap(Properties.Resources.active);
                 txtConnectionStatus.Text = "Подключен!";
             });
         }
 
         private void softphone_IncomingCallEvent(Call incomingCall)
         {
-            // change icon to disable
+            Parallel.Invoke(() =>
+            {
+                // Reject incoming call, if we have active 
+                if (this.call != null)
+                {
+                    softphone.TerminateCall(incomingCall);
+
+                    // write rejected call to base
+                    RecordToLocalDataBase.TimeStart = DateTime.Now;
+                    RecordToLocalDataBase.isRejected = true;
+
+                    return;
+                }
+
+                // Recieve inciming call
+                this.call = incomingCall;
+
+                // write incoming call to base
+                RecordToLocalDataBase.TimeStart = DateTime.Now;
+                RecordToLocalDataBase.isIncoming = true;
+
+#warning DoIncomingCallAnimationPanel
+                // Do incoming call panel animation
+
+                // Play sound
+                Classes.LocalAudioPlayer.PlaySound(Properties.Resources.notification_incoming);
+
+                //Get information about caller
+
+                
+            });
+
+            // change icon to incoming call
             InvokeGUIThread(() =>
             {
                 this.txtCallStatus.Text = "Входящий";
-                this.PhoneIcon.Source = new BitmapImage(new Uri("/SipClient;component/Resources/call-end.png", UriKind.Relative));
+                this.PhoneIcon.Source = ImageSourceFromBitmap(Properties.Resources.call_end);
             });
+        }
 
-            // Reject incoming call, if we have active
-            if (this.call != null)
+        private void GetInfoAboutCaller(ref string Name, ref string Phone, ref string Address)
+        {
+#warning NowUsedMysqlBase
+            // use wcf connection
+            //try
+            //{
+            //    string phone = GetPhone(this.call.GetFrom());
+            //    string caller_name = GetCallId(this.call.GetFrom());
+            //    string address = String.Empty;
+
+            //    var clientInfo = WcfClient.GetClinetInformation(phone);
+            //    InvokeGUIThread(() =>
+            //    {
+            //        //incCallWindow.SetAttributes(clientInfo.Phone, clientInfo.Name, clientInfo.Address);
+            //    });
+            //}
+            //catch (Exception e)
+            //{
+            //    MessageBox.Show(e.Message + Environment.NewLine + e.StackTrace);
+            //}
+
+            // Use Mysql connection
+            var tabCallerInfo = Classes.MainDataBase.GetDataTable(
+                        string.Format(
+                        @"select hat.order_id,hat.customer,hat.customer_name,addr.address_text
+                        from orders_hat hat left join customers_addresses addr on hat.order_id=addr.order_id
+                        where hat.customer = '{0}' order by date_sm desc limit 1;", Phone));
+            // Set new values to caller_name , address
+            if (tabCallerInfo != null && tabCallerInfo.Rows.Count > 0)
             {
-                softphone.TerminateCall(incomingCall);
+                string caller_name = Convert.ToString(tabCallerInfo.Rows[0]["name"]);
+                string address = Convert.ToString(tabCallerInfo.Rows[0]["address_text"]);
+
+                InvokeGUIThread(() => {
+                    this.labelName.Content = caller_name;
+                    this.labelPhone.Content = Phone;
+                    this.labelAddress.Content = address;
+                });
             }
             else
             {
-                this.call = incomingCall;
-
-                // create incoming call window
-                if (this.call != null)
-                {
-                    Task.Factory.StartNew(() =>
-                    {
-                        string phone = GetPhone(this.call.GetFrom());
-                        string caller_name = GetCallId(this.call.GetFrom());
-                        string address = String.Empty;
-
-                        // show incoming call window
-                        InvokeGUIThread(() =>
-                        {
-                            // Create new incoming window
-                            incCallWindow = new IncomingCallWindow();
-                            incCallWindow.Phone = phone;
-                            incCallWindow.Name = caller_name;
-                            incCallWindow.Address = address;
-                            incCallWindow.Call = this.call;
-                            incCallWindow.SoftPhone = softphone;
-                            incCallWindow.Show();
-                        });
-#warning WcfCall
-                        //Get data about caller
-                        try
-                        {
-                            var clientInfo = WcfClient.GetClinetInformation(phone);
-                            InvokeGUIThread(() =>
-                            {
-                                incCallWindow.SetAttributes(clientInfo.Phone, clientInfo.Name, clientInfo.Address);
-                            });
-                        }
-                        catch (Exception)
-                        {
-
-                        }
-
-                        // write incoming call record
-                        if (recordToDataBase == null)
-                            recordToDataBase = new Classes.CallRecord();
-
-                        this.recordToDataBase.isIncoming = 1;
-                    });
-                }
+                InvokeGUIThread(() => { SetAttributes(Phone, Name, Address); });
             }
         }
 
@@ -292,11 +308,11 @@ namespace SipClient
                 case Phone.Error.RegisterFailed:
                     {
                         InvokeGUIThread(() =>
-                {
-                    //set unavailable icon and text message
-                    this.StatusIcon.Source = new BitmapImage(new Uri("/SipClient;component/Resources/inactive.png", UriKind.Relative));
-                    txtConnectionStatus.Text = "Нет подключения!";
-                });
+                        {
+                            //set unavailable icon and text message
+                            this.StatusIcon.Source = ImageSourceFromBitmap(Properties.Resources.inactive); //new BitmapImage(new Uri("/SipClient;component/Resources/inactive.png", UriKind.Relative));
+                            txtConnectionStatus.Text = "Нет подключения!";
+                        });
                     }
                     break;
                 case Phone.Error.UnknownError:
@@ -310,87 +326,30 @@ namespace SipClient
             }
         }
 
+        #endregion
+
+        #region PhoneWindowEvents
+
+
+        #endregion
 #warning ex2
         private void SetVolumes()
         {
-            var micValue = (this.micSlider.Value);
+            //var micValue = (this.micSlider.Value);
             var speakerValue = (this.volumeSlider.Value);
-            var currentSetMicValue = Math.Ceiling(softphone.GetMediaHandler.GetMicrophoneSound(call) * 100);
+            //var currentSetMicValue = Math.Ceiling(softphone.GetMediaHandler.GetMicrophoneSound(call) * 100);
             var currentSetSpeakerValue = Math.Ceiling(softphone.GetMediaHandler.GetSpeakerSound(call) * 100);
 
             // set new mic value 
-            if (micValue - currentSetMicValue != 0)
-            {
-                this.micSlider.Value = micValue;
-            }
+            //if (micValue - currentSetMicValue != 0)
+            //{
+            //    this.micSlider.Value = micValue;
+            //}
             // set new speaker value 
             if (speakerValue - currentSetSpeakerValue != 0)
             {
                 this.volumeSlider.Value = speakerValue;
             }
-        }
-
-        private Func<string, bool> IsPhoneNumber = (string number) => Regex.Match(number, @"^((\+7|7|8)+([0-9]){4})?([0-9]{3})?([0-9]{3})$").Success;
-
-        private Func<string, string> GetCallId = (string sip) => Regex.Match(sip, @"[\\""](\w+)[\\""]").Groups[1].Value;
-
-        private Func<string, string> GetPhone = (string sip) => Regex.Match(sip, @"sip:(\d+)@").Groups[1].Value;
-
-        /// <summary>
-        /// Send message to Orders
-        /// </summary>
-        //public static void SendMessageToOrders()
-        //{
-        //    //Формируем сообщение и отправляем его
-        //    using (var msg = new System.Messaging.Message())
-        //    {
-        //        //create message
-        //        MSQ.Message msq_message = null;
-        //        //use latest message
-        //        if (lastIncomingMessage != null)
-        //        {
-        //            //Set new behaviour
-        //            lastIncomingMessage.BehaviourFlags.isCreateNewOrder = CreateNewOrderFlag;
-        //            //set link to message
-        //            msq_message = lastIncomingMessage;
-        //        }
-        //        else //or create new message
-        //        {
-        //            string phone = string.Empty;
-        //            if (incCallWindow != null)
-        //                phone = incCallWindow.Phone;
-
-        //            msq_message = new MSQ.Message();
-        //            msq_message.BehaviourFlags = new MSQ.Behaviour() { isFinded = false, isCreateNewOrder = false };
-        //            msq_message.CustomerInfo = new MSQ.Customer() { Addres = String.Empty, Name = String.Empty, PhoneNumber = phone };
-        //        }
-        //        //Create queue message with guaranteed delivery
-        //        msg.Body = msq_message;
-        //        msg.Recoverable = true;
-        //        msg.Formatter = new BinaryMessageFormatter();
-        //        //Send to sipClient queue
-        //        SipClientQueue.Send(msg);
-        //    }
-        //}
-
-        /// <summary>
-        ///  Click on the phone board buttons
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        private void btnActionClick(object sender, EventArgs e)
-        {
-            var btn = sender as Button;
-
-            if (btn == null)
-                return;
-
-            // add to phone number collection
-            if (txtPhoneNumber.Text.Equals(_PHONE_NUMBER_HELP))
-            {
-                txtPhoneNumber.Text = String.Empty;
-            }
-            txtPhoneNumber.Text += Convert.ToString(btn.Content).Trim();
         }
 
         /// <summary>
@@ -400,11 +359,6 @@ namespace SipClient
         {
             Dispatcher.Invoke(action, null);
         }
-
-        /// <summary>
-        /// return true if s is transfer phone number
-        /// </summary>
-        Func<string, bool> isTransferNumber = (s) => Regex.Match(s, @"^(#){1}").Success;
 
         /// <summary>
         ///  Нажатие на кнопку соединить\ разъединить
@@ -448,12 +402,24 @@ namespace SipClient
             if (this.call != null)
                 return;
 
+            if (String.IsNullOrEmpty(phoneNumber))
+                return;
+
             // Check phone number 
-            if (!IsPhoneNumber(phoneNumber) || String.IsNullOrEmpty(phoneNumber))
+            if (!IsPhoneNumber(phoneNumber))
             {
                 MessageBox.Show(string.Concat("Неправильный телефонный номер : '", phoneNumber, "'!"));
                 return;
             }
+            try
+            {
+                CheckSoundDevices();
+            }
+            catch (Exception e)
+            {
+                MessageBox.Show(e.Message);
+            }
+
             // make a call to number
             softphone.MakeCall(phoneNumber);
         }
@@ -461,39 +427,42 @@ namespace SipClient
         // изменение ползунка с громкостью
         private void volumeSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
         {
-            if (this.call == null)
-                return;
-
             // change graphics
             var volValue = this.volumeSlider.Value;
             InvokeGUIThread(() =>
             {
                 this.volumeSlider.SelectionEnd = volValue;
             });
-            // set new value
-            softphone.GetMediaHandler.SetSpeakerSound(this.call, (float)(volValue % 100));
-        }
 
-        private void micSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
-        {
-            if (this.call == null)
-                return;
-
-            // change graphics
-            var micValue = this.micSlider.Value;
-            InvokeGUIThread(() =>
+            // set new volume
+            if (this.call != null)
             {
-                this.micSlider.SelectionEnd = micValue;
-            });
-            // set new value
-            softphone.GetMediaHandler.SetMicrophoneSound(this.call, (float)(micValue % 100));
+                softphone.GetMediaHandler.SetSpeakerSound(this.call, (float)(volValue % 100));
+            }
         }
+
+        //private void micSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+        //{
+        //    if (this.call == null)
+        //        return;
+
+        //    // change graphics
+        //    //var micValue = this.micSlider.Value;
+        //    InvokeGUIThread(() =>
+        //    {
+        //        this.micSlider.SelectionEnd = micValue;
+        //    });
+        //    // set new value
+        //    softphone.GetMediaHandler.SetMicrophoneSound(this.call, (float)(micValue % 100));
+        //}
 
         private void txtPhoneNumber_GotFocus(object sender, RoutedEventArgs e)
         {
-            string text = (txtPhoneNumber.Text).Trim();
+            //change background color
+            this.borderPhoneNumber.BorderBrush = System.Windows.Media.Brushes.Red;
+
             // Если в поле шаблон -> сбрасываем его
-            if (text.Equals(_PHONE_NUMBER_HELP))
+            if (txtPhoneNumber.Text.Equals(_PHONE_NUMBER_HELP))
             {
                 InvokeGUIThread(() =>
                 {
@@ -504,17 +473,19 @@ namespace SipClient
 
         private void txtPhoneNumber_LostFocus(object sender, RoutedEventArgs e)
         {
-            string text = (txtPhoneNumber.Text).Trim();
+            //change background color
+            this.borderPhoneNumber.BorderBrush = System.Windows.Media.Brushes.Green;
+
             // если введеный текст не похож на шабло и не пустая строка -> выходим
-            if (text.Equals(_PHONE_NUMBER_HELP))
-                return;
-            else if (string.IsNullOrEmpty(text) && !IsPhoneNumber(text))
-            {
-                InvokeGUIThread(() =>
-                {
-                    txtPhoneNumber.Text = _PHONE_NUMBER_HELP;
-                });
-            }
+            //if (txtPhoneNumber.Text.Equals(_PHONE_NUMBER_HELP))
+            //    return;
+            //else if (string.IsNullOrEmpty(txtPhoneNumber.Text)) /* && !IsPhoneNumber(text))*/
+            //{
+            //    InvokeGUIThread(() =>
+            //    {
+            //        txtPhoneNumber.Text = _PHONE_NUMBER_HELP;
+            //    });
+            //}
         }
 
         private void Window_KeyDown(object sender, KeyEventArgs e)
@@ -529,49 +500,115 @@ namespace SipClient
                         txtPhoneNumber.Text = txtPhoneNumber.Text.Remove(txtPhoneNumber.Text.Length - 1, 1);
                     }
                     break;
-                // short input
+                // short input keys
                 case Key.NumPad0:
-                case Key.NumPad1:
-                case Key.NumPad2:
-                case Key.NumPad3:
-                case Key.NumPad4:
-                case Key.NumPad5:
-                case Key.NumPad6:
-                case Key.NumPad7:
-                case Key.NumPad8:
-                case Key.NumPad9:
+                case Key.D0:
                     {
                         //clear field
                         if (txtPhoneNumber.Text.Equals(_PHONE_NUMBER_HELP))
                             txtPhoneNumber.Text = String.Empty;
                         //add number
-                        txtPhoneNumber.Text += (Convert.ToInt32(e.Key) - 74);
+                        //txtPhoneNumber.Text += 0;
                     }
                     break;
-                // short input 
-                case Key.D0:
+                case Key.NumPad1:
                 case Key.D1:
+                    {
+                        //clear field
+                        if (txtPhoneNumber.Text.Equals(_PHONE_NUMBER_HELP))
+                            txtPhoneNumber.Text = String.Empty;
+                        //add number
+                        txtPhoneNumber.Text += 1;
+                    }
+                    break;
+                case Key.NumPad2:
                 case Key.D2:
+                    {
+                        //clear field
+                        if (txtPhoneNumber.Text.Equals(_PHONE_NUMBER_HELP))
+                            txtPhoneNumber.Text = String.Empty;
+                        //add number
+                        txtPhoneNumber.Text += 2;
+                    }
+                    break;
+                case Key.NumPad3:
                 case Key.D3:
+                    {
+                        //clear field
+                        if (txtPhoneNumber.Text.Equals(_PHONE_NUMBER_HELP))
+                            txtPhoneNumber.Text = String.Empty;
+                        //add number
+                        txtPhoneNumber.Text += 3;
+                    }
+                    break;
+                case Key.NumPad4:
                 case Key.D4:
+                    {
+                        //clear field
+                        if (txtPhoneNumber.Text.Equals(_PHONE_NUMBER_HELP))
+                            txtPhoneNumber.Text = String.Empty;
+                        //add number
+                        txtPhoneNumber.Text += 4;
+                    }
+                    break;
+                case Key.NumPad5:
                 case Key.D5:
+                    {
+                        //clear field
+                        if (txtPhoneNumber.Text.Equals(_PHONE_NUMBER_HELP))
+                            txtPhoneNumber.Text = String.Empty;
+                        //add number
+                        txtPhoneNumber.Text += 5;
+                    }
+                    break;
+                case Key.NumPad6:
                 case Key.D6:
+                    {
+                        //clear field
+                        if (txtPhoneNumber.Text.Equals(_PHONE_NUMBER_HELP))
+                            txtPhoneNumber.Text = String.Empty;
+                        //add number
+                        txtPhoneNumber.Text += 6;
+                    }
+                    break;
+                case Key.NumPad7:
                 case Key.D7:
+                    {
+                        //clear field
+                        if (txtPhoneNumber.Text.Equals(_PHONE_NUMBER_HELP))
+                            txtPhoneNumber.Text = String.Empty;
+                        //add number
+                        txtPhoneNumber.Text += 7;
+                    }
+                    break;
+                case Key.NumPad8:
                 case Key.D8:
+                    {
+                        //clear field
+                        if (txtPhoneNumber.Text.Equals(_PHONE_NUMBER_HELP))
+                            txtPhoneNumber.Text = String.Empty;
+                        //add number
+                        txtPhoneNumber.Text += 8;
+                    }
+                    break;
+                case Key.NumPad9:
                 case Key.D9:
                     {
                         //clear field
                         if (txtPhoneNumber.Text.Equals(_PHONE_NUMBER_HELP))
                             txtPhoneNumber.Text = String.Empty;
                         //add number
-                        txtPhoneNumber.Text += (Convert.ToInt16(e.Key) - 34);
+                        txtPhoneNumber.Text += 9;
                     }
                     break;
                 // calling to number
                 case Key.Enter:
                     {
-                        string phoneNumber = txtPhoneNumber.Text;
-                        CallTo(phoneNumber);
+                        if (!txtPhoneNumber.Text.Equals(_PHONE_NUMBER_HELP))
+                        {
+                            string phoneNumber = txtPhoneNumber.Text;
+                            CallTo(phoneNumber);
+                        }
                     }
                     break;
             }
@@ -626,12 +663,21 @@ namespace SipClient
             });
         }
 
+        public static ImageSource ImageSourceFromBitmap(Bitmap bitmap)
+        {
+            return Imaging.CreateBitmapSourceFromHBitmap(
+                    bitmap.GetHbitmap(),
+                    IntPtr.Zero,
+                    Int32Rect.Empty,
+                    BitmapSizeOptions.FromEmptyOptions());
+        }
+
         private void buttonKeyPadButton_Click(object sender, RoutedEventArgs e)
         {
-            var btn = sender as Button;
-
-            if (btn == null)
+            if (txtPhoneNumber.Text.Length > 13)
                 return;
+
+            var btn = sender as Button;
 
             if (call == null && btn.Content.Equals('#')) return;
 
@@ -642,19 +688,49 @@ namespace SipClient
                 InvokeGUIThread(() =>
                 {
                     txtCallStatus.Text = "Трансфер на..";
-                    this.PhoneIcon.Source = new BitmapImage(new Uri("/SipClient;component/Resources/telephone.png", UriKind.Relative));
+                    this.PhoneIcon.Source = ImageSourceFromBitmap(Properties.Resources.telephone);
                 });
             }
 
             if (call != null && !transferFlag)
                 return;
 
+            // Сменим btnAdditional Icon
+            CheckButtonAdditionalIcon();
+
+            // Добавим символ с кнокпки
+            PutNumberWithDTMF(btn.Content.ToString());
+        }
+
+        private void CheckButtonAdditionalIcon()
+        {
+            if (this.txtPhoneNumber.Text == _PHONE_NUMBER_HELP || this.txtPhoneNumber.Text == string.Empty)
+            {
+                InvokeGUIThread(() =>
+                {
+                    this.btnAdditionalIcon.Source = PhoneWindow.ImageSourceFromBitmap(Properties.Resources.down);
+                });
+            }
+            else
+            {
+                InvokeGUIThread(() =>
+                {
+                    this.btnAdditionalIcon.Source = PhoneWindow.ImageSourceFromBitmap(Properties.Resources.close);
+                });
+            }
+        }
+
+        private void PutNumberWithDTMF(string symb)
+        {
             // Если не подсказка для ввода текста
             if (txtPhoneNumber.Text.Equals(_PHONE_NUMBER_HELP))
                 txtPhoneNumber.Text = String.Empty;
 
-            // Добавим символ с кнокпки
-            txtPhoneNumber.Text += btn.Content.ToString().Trim();
+            // Play Sound
+            Classes.LocalAudioPlayer.PlaySound(Classes.LocalAudioPlayer.DTFMS_DICTONARY[symb]);
+
+            // add to phone text
+            txtPhoneNumber.Text += symb;
         }
 
         public bool SpeakerOff { get; set; }
@@ -678,20 +754,24 @@ namespace SipClient
         {
             if (!SpeakerOff)
             {
-                InvokeGUIThread(() => { this.SpeakerIcon.Source = new BitmapImage(new Uri("/SipClient;component/Resources/speaker_on_64x64.png", UriKind.Relative)); });
+                InvokeGUIThread(() => { this.SpeakerIcon.Source = ImageSourceFromBitmap(Properties.Resources.speaker_on_64x64); });
+                // new BitmapImage(new Uri("/SipClient;component/Resources/speaker_on_64x64.png", UriKind.Relative)); });
             }
             else
             {
-                InvokeGUIThread(() => { this.SpeakerIcon.Source = new BitmapImage(new Uri("/SipClient;component/Resources/speaker_off_64x64.png", UriKind.Relative)); });
+                InvokeGUIThread(() => { this.SpeakerIcon.Source = ImageSourceFromBitmap(Properties.Resources.speaker_off_64x64); });
+                // new BitmapImage(new Uri("/SipClient;component/Resources/speaker_off_64x64.png", UriKind.Relative)); });
             }
 
             if (!MicrophoneOff)
             {
-                InvokeGUIThread(() => { this.MicIcon.Source = new BitmapImage(new Uri("/SipClient;component/Resources/mic_on.png", UriKind.Relative)); });
+                InvokeGUIThread(() => { this.MicIcon.Source = ImageSourceFromBitmap(Properties.Resources.mic_on); });
+                // new BitmapImage(new Uri("/SipClient;component/Resources/mic_on.png", UriKind.Relative)); });
             }
             else
             {
-                InvokeGUIThread(() => { this.MicIcon.Source = new BitmapImage(new Uri("/SipClient;component/Resources/mic_off.png", UriKind.Relative)); });
+                InvokeGUIThread(() => { this.MicIcon.Source = ImageSourceFromBitmap(Properties.Resources.mic_off); });
+                // new BitmapImage(new Uri("/SipClient;component/Resources/mic_off.png", UriKind.Relative)); });
             }
         }
 
@@ -706,7 +786,11 @@ namespace SipClient
             App.Current.Shutdown();
         }
 
-        private bool CheckSoundDevices()
+        /// <summary>
+        /// Throw Exception with message
+        /// </summary>
+        /// <returns></returns>
+        private void CheckSoundDevices()
         {
 #warning ex4
             var soundDevs = softphone.GetMediaHandler.GetAvailableSoundDevices;
@@ -722,9 +806,8 @@ namespace SipClient
                 if (recordDev == null)
                     message += ": Записи ";
                 message += "!\nПроверьте подключение этих устройств!";
-                MessageBox.Show(message, "Внимание!", MessageBoxButton.OK, MessageBoxImage.Error);
+                throw new Exception(message);
             }
-            return !notGood;
         }
 
         private Func<string, bool> isMicrophone = (device) => Regex.Match(device, "(Микрофон)").Success;
@@ -743,24 +826,24 @@ namespace SipClient
 
         private void AnimationTimerGrow()
         {
-            lblTime.Content = "00:00:00";
+            //lblTime.Content = "00:00:00";
 
-            DoubleAnimation animation = new DoubleAnimation();
-            animation.From = lblTime.ActualHeight;
-            animation.To = 30;
-            animation.SpeedRatio = 2;
-            animation.Duration = TimeSpan.FromSeconds(1);
-            lblTime.BeginAnimation(Label.HeightProperty, animation);
+            //DoubleAnimation animation = new DoubleAnimation();
+            //animation.From = lblTime.ActualHeight;
+            //animation.To = 30;
+            //animation.SpeedRatio = 2;
+            //animation.Duration = TimeSpan.FromSeconds(1);
+            //lblTime.BeginAnimation(Label.HeightProperty, animation);
         }
 
         private void AnimationTimerDecrease()
         {
-            DoubleAnimation animation = new DoubleAnimation();
-            animation.From = lblTime.ActualHeight;
-            animation.To = 0;
-            animation.SpeedRatio = 2;
-            animation.Duration = TimeSpan.FromSeconds(1);
-            lblTime.BeginAnimation(Label.HeightProperty, animation);
+            //DoubleAnimation animation = new DoubleAnimation();
+            //animation.From = lblTime.ActualHeight;
+            //animation.To = 0;
+            //animation.SpeedRatio = 2;
+            //animation.Duration = TimeSpan.FromSeconds(1);
+            //lblTime.BeginAnimation(Label.HeightProperty, animation);
         }
 
         internal void StartTimer()
@@ -775,7 +858,7 @@ namespace SipClient
                 InvokeGUIThread(() =>
                 {
                     timeSpan += timer.Interval;
-                    lblTime.Content = timeSpan.ToString(@"mm\:ss\:ff");
+                    //lblTime.Content = timeSpan.ToString(@"mm\:ss");
                 });
             });
             timer.Start();
@@ -810,7 +893,7 @@ namespace SipClient
             animTimer.Start();
         }
 
-        private void LoginMenuClick(object sender, RoutedEventArgs e)
+        private void SettingsWindowClick(object sender, RoutedEventArgs e)
         {
             SettingsWindow settings = new SettingsWindow();
             if (settings.ShowDialog() == true)
@@ -821,6 +904,69 @@ namespace SipClient
                     InitializeSoftphone(); ;
                 });
             }
+        }
+
+        private void btnAccept_Click(object sender, RoutedEventArgs e)
+        {
+            // принимаем звонок
+            if (call != null)
+            {
+                softphone.ReceiveOrResumeCall(this.call);
+            }
+        }
+
+        private void btnHoldOn_Click(object sender, RoutedEventArgs e)
+        {
+            // Если удерживаем звонок
+            if (call != null)
+            {
+                softphone.HoldCall(this.call);
+            }
+        }
+
+        private void btnReject_Click(object sender, RoutedEventArgs e)
+        {
+            // отклоняем звонок 
+            if (call != null)
+            {
+                softphone.TerminateCall(this.call);
+            }
+        }
+
+        private void Item_MouseEnter(object sender, MouseEventArgs e)
+        {
+            (sender as Control).Background = System.Windows.Media.Brushes.WhiteSmoke;
+        }
+
+        private void Item_MouseLeave(object sender, MouseEventArgs e)
+        {
+            (sender as Control).Background = null;
+        }
+
+        // Дпоплнительный контрол для поля ввода телефонного номера
+        private void btnPhoneNumberAdditional_Click(object sender, RoutedEventArgs e)
+        {
+            if (txtPhoneNumber.Text == _PHONE_NUMBER_HELP)
+            {
+                ShowListToCalls();
+            }
+            else
+            {
+                txtPhoneNumber.Text = "";
+            }
+        }
+
+        // Выводит список с предидущими заказами
+        private void ShowListToCalls()
+        {
+
+        }
+
+        private void txtPhoneNumber_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            this.KeyDown -= new KeyEventHandler(Window_KeyDown);
+
+            CheckButtonAdditionalIcon();
         }
     }
 }

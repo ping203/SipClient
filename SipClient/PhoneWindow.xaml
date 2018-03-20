@@ -2,12 +2,29 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" 
         ResizeMode="NoResize" Title="SipClient"
         WindowStartupLocation="CenterScreen" Loaded="Window_Loaded"
-        Icon="/SipClient;component/Resources/icon.ico" KeyDown="Window_KeyDown" 
+        Icon="/SipClient;component/Resources/Icons/icon.ico" KeyDown="Window_KeyDown" 
         MouseDown="Window_MouseDown" Closing="Window_Closing" 
         WindowStyle="None" AllowsTransparency="True" BorderBrush="#4a71ef" BorderThickness="2" 
         mc:Ignorable="d" xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-         SizeToContent="WidthAndHeight" d:DesignHeight="461" d:DesignWidth="259">
+         SizeToContent="WidthAndHeight" d:DesignHeight="540" d:DesignWidth="306">
+    <!--Templates-->
+    <Window.Resources>
+        <ControlTemplate x:Key="ButtonTemplate" TargetType="Button">
+            <Border BorderBrush="Orange" BorderThickness="3" CornerRadius="2"
+                    TextBlock.Foreground="White">
+                <Border.Background>
+                    <LinearGradientBrush>
+                        <GradientStopCollection>
+                            <GradientStop Offset="0" Color="LimeGreen"></GradientStop>
+                            <GradientStop Offset="1" Color="LightBlue"></GradientStop>
+                        </GradientStopCollection>
+                    </LinearGradientBrush>
+                </Border.Background>
+                <ContentPresenter RecognizesAccessKey="True"></ContentPresenter>
+            </Border>
+        </ControlTemplate>
+    </Window.Resources>
     <Border>
         <Grid>
             <!--Gradient Background-->
@@ -22,51 +39,49 @@
                 </Rectangle.Fill>
             </Rectangle>
             <!--Menu-->
-            <!--Menu-->
             <Menu VerticalAlignment="Top" HorizontalAlignment="Left" Background="{x:Null}">
                 <!-- Login menu -->
-                <MenuItem Height="24" Width="24" HorizontalAlignment="Left" Click="LoginMenuClick">
+                <MenuItem Height="24" Width="24" HorizontalAlignment="Left" Click="SettingsWindowClick" MouseEnter="Item_MouseEnter" MouseLeave="Item_MouseLeave">
                     <MenuItem.Icon>
-                        <Image Source="/SipClient;component/Resources/key.png" />
+                        <Image Source="/SipClient;component/Resources/Images/settings_icon.png" />
                     </MenuItem.Icon>
                 </MenuItem>
             </Menu>
             <Menu VerticalAlignment="Top" HorizontalAlignment="Center" Background="{x:Null}">
                 <!--Username-->
-                <MenuItem x:Name="miUsername" Click="miUsername_Click" FontSize="14" FontWeight="Medium"  Header="username" Height="24" Width="100"/>
+                <MenuItem x:Name="miUsername" Click="miUsername_Click" FontSize="14" FontWeight="Medium" Header="username" Height="24" Width="100" MouseEnter="Item_MouseEnter" MouseLeave="Item_MouseLeave"/>
             </Menu>
             <Menu VerticalAlignment="Top" HorizontalAlignment="Right" Background="{x:Null}">
                 <!-- right button set -->
-                <MenuItem Height="24" Width="24" HorizontalAlignment="Right" Click="btnMinimizeClick">
+                <MenuItem Height="24" Width="24" HorizontalAlignment="Right" Click="btnMinimizeClick" MouseEnter="Item_MouseEnter" MouseLeave="Item_MouseLeave">
                     <MenuItem.Icon>
-                        <Image Source="/SipClient;component/Resources/minimize.png"/>
+                        <Image Source="/SipClient;component/Resources/Images/minimize.png"/>
                     </MenuItem.Icon>
                 </MenuItem>
-                <MenuItem Height="24" Width="24" HorizontalAlignment="Right" Click="btnCloseClick">
+                <MenuItem Height="24" Width="24" HorizontalAlignment="Right" Click="btnCloseClick" MouseEnter="Item_MouseEnter" MouseLeave="Item_MouseLeave">
                     <MenuItem.Icon>
-                        <Image Source="/SipClient;component/Resources/close.png"/>
+                        <Image Source="/SipClient;component/Resources/Images/close.png"/>
                     </MenuItem.Icon>
                 </MenuItem>
             </Menu>
             <!--Controls-->
-            <Border Background="White" Margin="0,25,0,4">
+            <Border Background="#f4f4f4" Margin="0,25,0,4">
                 <StackPanel x:Name="spConfigs">
                     <!--StatusPanel-->
                     <Border Margin="2">
-                            <StackPanel>
-                            <Grid Margin="2">
+                        <StackPanel>
+                            <Grid>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="40"></ColumnDefinition>
-                                    <ColumnDefinition Width="90"></ColumnDefinition>
-                                    <ColumnDefinition Width="10"></ColumnDefinition>
+                                    <ColumnDefinition></ColumnDefinition>
                                     <ColumnDefinition></ColumnDefinition>
                                 </Grid.ColumnDefinitions>
-                                <Image Grid.Column="0" Name="StatusIcon" Source="SipClient;component/Resources/inactive.png" />
-                                <StackPanel Grid.Column="1">
+                                <Image Name="StatusIcon" Source="SipClient;component/Resources/Images/inactive.png" Height="40" VerticalAlignment="Top" />
+                                <StackPanel Grid.Column="1" Margin="5">
                                     <TextBlock Text="Статус" Foreground="#575757" FontSize="10"></TextBlock>
                                     <TextBlock FontSize="10" Name="txtConnectionStatus" Text="Нет подключения!" />
                                 </StackPanel>
-                                <StackPanel Grid.Column="4">
+                                <StackPanel Grid.Column="4" Margin="5" HorizontalAlignment="Right">
                                     <TextBlock Text="Статус Звонка" Foreground="#575757" FontSize="10"></TextBlock>
                                     <TextBlock FontSize="10" Name="txtCallStatus" Text="Ожидание!" />
                                 </StackPanel>
@@ -75,84 +90,108 @@
                             <Grid Margin="2">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="40"></ColumnDefinition>
+                                    <ColumnDefinition Width="5"></ColumnDefinition>
+                                    <ColumnDefinition Width="40"></ColumnDefinition>
                                     <ColumnDefinition></ColumnDefinition>
                                 </Grid.ColumnDefinitions>
-                                <Button Background="{x:Null}" Click="btnVolumeOffOn">
+                                <Button Background="White" Click="btnMicOffOn">
                                     <ContentControl>
-                                        <Image Name="SpeakerIcon" Grid.Column="0" Source="/SipClient;component/Resources/speaker_on_64x64.png"></Image>
+                                        <Image Name="MicIcon" Grid.Column="0" Source="/SipClient;component/Resources/Images/mic_on.png"></Image>
                                     </ContentControl>
                                 </Button>
-                                <Slider Grid.Column="1" Height="26" Name="volumeSlider"
-                                        Foreground="Blue" Minimum="0" Maximum="100"
+                                <Button Background="White" Click="btnVolumeOffOn" Grid.Column="2">
+                                    <ContentControl>
+                                        <Image Name="SpeakerIcon" Grid.Column="0" Source="/SipClient;component/Resources/Images/speaker_on_64x64.png"></Image>
+                                    </ContentControl>
+                                </Button>
+                                <Slider Grid.Column="3" Height="26" Name="volumeSlider"
+                                        Foreground="Blue" Minimum="0" Maximum="100" Margin="5,0,2,0"
                                         IsSelectionRangeEnabled="True" SelectionStart="0" SelectionEnd="70"
                                         Value="70" ValueChanged="volumeSlider_ValueChanged" LargeChange="10" 
                                         TickFrequency="10" TickPlacement="BottomRight" SmallChange="10"></Slider>
                             </Grid>
-
-                            <!--Microphone settings-->
-                            <Grid Margin="2">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="40"></ColumnDefinition>
-                                    <ColumnDefinition></ColumnDefinition>
-                                </Grid.ColumnDefinitions>
-                                <Button Background="{x:Null}" Click="btnMicOffOn">
-                                    <ContentControl>
-                                        <Image Name="MicIcon" Grid.Column="0" Source="/SipClient;component/Resources/mic_on.png"></Image>
-                                    </ContentControl>
-                                </Button>
-                                <Slider Grid.Column="1" Height="26" Name="micSlider"
-                                          Foreground="Blue" Minimum="0" Maximum="100"
-                                        IsSelectionRangeEnabled="True" SelectionStart="0" SelectionEnd="70"
-                                        Value="70" LargeChange="10" ValueChanged="micSlider_ValueChanged"
-                                        TickFrequency="10" TickPlacement="BottomRight" SmallChange="10" ></Slider>
-                            </Grid>
-
-                            <!--Timer animation-->
-                            <Grid x:Name="gridTimeLabel">
-                                <Label x:Name="lblTime" FontFamily="Courier New" FontSize="22" HorizontalAlignment="Center"/>
-                            </Grid>
-                                
-                        </StackPanel>                           
+                            <!-- Incoming call panel -->
+                            <Border CornerRadius="0,10,10,10" Name="brdIncomingCall">
+                                <StackPanel Margin="2" >
+                                    <Border Margin="0,2,0,2" Background="White">
+                                        <StackPanel>
+                                            <Label x:Name="labelName" Content="Name Field"></Label>
+                                            <Label x:Name="labelAddress" Content="Addres Field"></Label>
+                                            <Label x:Name="labelPhone" Content="PhoneNumber"></Label>
+                                        </StackPanel>
+                                    </Border>
+                                    <!--Buttons-->
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition></ColumnDefinition>
+                                            <ColumnDefinition></ColumnDefinition>
+                                            <ColumnDefinition></ColumnDefinition>
+                                        </Grid.ColumnDefinitions>
+                                        <Button x:Name="btnAccept" Background="White" Grid.Column="0" Margin="2,0,2,0" Padding="5" Click="btnAccept_Click" Content="Принять" MinWidth="50" MinHeight="30"  />
+                                        <Button x:Name="btnHoldOn" Background="White" Grid.Column="1" Margin="2,0,2,0" Padding="5" Click="btnHoldOn_Click" Content="Удерживать" MinWidth="50" MinHeight="30"/>
+                                        <Button x:Name="btnReject" Background="White" Grid.Column="2" Margin="2,0,2,0" Padding="5" Click="btnReject_Click" Content="Отклонить" MinWidth="50" MinHeight="30" />
+                                        <!--<Label x:Name="lblTime" FontFamily="Courier New" FontSize="18" Content="00:00:"/>-->
+                                    </Grid>
+                                </StackPanel>                                
+                            </Border>                          
+                        </StackPanel>
                     </Border>
+                    <!--phoneNumber panel-->
+                    <StackPanel>
+                        <Grid Height="40" Margin="5">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition />
+                                <ColumnDefinition Width="60"/>
+                            </Grid.ColumnDefinitions>
+                            <Border x:Name="borderPhoneNumber" BorderBrush="Red" BorderThickness="1"  Margin="0,0,4,0" Grid.Column="0" CornerRadius="4,4,4,4">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBox x:Name="txtPhoneNumber" BorderBrush="#979797"
+                                         TextAlignment="Left" GotFocus="txtPhoneNumber_GotFocus" 
+                                         LostFocus="txtPhoneNumber_LostFocus" FontSize="18" 
+                                         MaxLength="13" Foreground="#979797" HorizontalAlignment="Left"
+                                         Grid.ColumnSpan="2" MinWidth="160" TextChanged="txtPhoneNumber_TextChanged"/>
+                                    <Button x:Name="btnPhoneNumberAdditional" Background="{x:Null}" MinWidth="40" Click="btnPhoneNumberAdditional_Click" >
+                                        <ContentControl>
+                                            <Image x:Name="btnAdditionalIcon" Source="/SipClient;component/Resources/Images/close.png" />
+                                        </ContentControl>
+                                    </Button>
+                                </StackPanel>
+                            </Border>
 
-                    <!--Numpad-->
-                    <Border Grid.Row="1">
-                        <Grid>
+                            <Button x:Name="btnConnectOrReject" Click="btnConnectOrReject_Click"
+                                    BorderBrush="#979797" BorderThickness="1" Grid.Column="1">
+                                <ContentControl>
+                                    <Image x:Name="PhoneIcon" Source="/SipClient;component/Resources/Images/call-end.png"/>
+                                </ContentControl>
+                            </Button>
+                        </Grid>
+                        <!--Numpad-->
+                        <Grid Background="white">
                             <Grid.RowDefinitions>
-                                <RowDefinition Height="40"></RowDefinition>
-                                <RowDefinition Height="40"></RowDefinition>
-                                <RowDefinition Height="40"></RowDefinition>
-                                <RowDefinition Height="40"></RowDefinition>
-                                <RowDefinition Height="40"></RowDefinition>
+                                <RowDefinition MinHeight="40"></RowDefinition>
+                                <RowDefinition MinHeight="40"></RowDefinition>
+                                <RowDefinition MinHeight="40"></RowDefinition>
+                                <RowDefinition MinHeight="40"></RowDefinition>
                             </Grid.RowDefinitions>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition></ColumnDefinition>
                                 <ColumnDefinition></ColumnDefinition>
                                 <ColumnDefinition></ColumnDefinition>
                             </Grid.ColumnDefinitions>
-                            <TextBox x:Name="txtPhoneNumber" Grid.ColumnSpan="2" Grid.Row="0" 
-                                     BorderBrush="#979797" BorderThickness="1" TextAlignment="Left" 
-                                     GotFocus="txtPhoneNumber_GotFocus" LostFocus="txtPhoneNumber_LostFocus" 
-                                     FontSize="18" MaxLength="13" Foreground="#979797"/>
-                            <Button x:Name="btnConnectOrReject" Click="btnConnectOrReject_Click" Grid.Row="0" Grid.Column="2" BorderBrush="#979797" BorderThickness="1" >
-                                <ContentControl>
-                                    <Image Name="PhoneIcon" Source="/SipClient;component/Resources/call-end.png"/>
-                                </ContentControl>
-                            </Button>
-                            <Button Grid.Row="1" Grid.Column="0" BorderBrush="#979797" BorderThickness="1" Tag="1" Click="buttonKeyPadButton_Click" Content="1" FontSize="18" ></Button>
-                            <Button Grid.Row="1" Grid.Column="1" BorderBrush="#979797" BorderThickness="1" Tag="2" Click="buttonKeyPadButton_Click" Content="2" FontSize="18" ></Button>
-                            <Button Grid.Row="1" Grid.Column="2" BorderBrush="#979797" BorderThickness="1" Tag="3" Click="buttonKeyPadButton_Click" Content="3" FontSize="18" ></Button>
-                            <Button Grid.Row="2" Grid.Column="0" BorderBrush="#979797" BorderThickness="1" Tag="4" Click="buttonKeyPadButton_Click" Content="4" FontSize="18" ></Button>
-                            <Button Grid.Row="2" Grid.Column="1" BorderBrush="#979797" BorderThickness="1" Tag="5" Click="buttonKeyPadButton_Click" Content="5" FontSize="18" ></Button>
-                            <Button Grid.Row="2" Grid.Column="2" BorderBrush="#979797" BorderThickness="1" Tag="6" Click="buttonKeyPadButton_Click" Content="6" FontSize="18" ></Button>
-                            <Button Grid.Row="3" Grid.Column="0" BorderBrush="#979797" BorderThickness="1" Tag="7" Click="buttonKeyPadButton_Click" Content="7" FontSize="18" ></Button>
-                            <Button Grid.Row="3" Grid.Column="1" BorderBrush="#979797" BorderThickness="1" Tag="8" Click="buttonKeyPadButton_Click" Content="8" FontSize="18" ></Button>
-                            <Button Grid.Row="3" Grid.Column="2" BorderBrush="#979797" BorderThickness="1" Tag="9" Click="buttonKeyPadButton_Click" Content="9" FontSize="18" ></Button>
-                            <Button Grid.Row="4" Grid.Column="0" BorderBrush="#979797" BorderThickness="1" Tag="*" Click="buttonKeyPadButton_Click" Content="*" FontSize="22" ></Button>
-                            <Button Grid.Row="4" Grid.Column="1" BorderBrush="#979797" BorderThickness="1" Tag="0" Click="buttonKeyPadButton_Click" Content="0" FontSize="18" ></Button>
-                            <Button Grid.Row="4" Grid.Column="2" BorderBrush="#979797" BorderThickness="1" Tag="#" Click="buttonKeyPadButton_Click" Content="#" FontSize="18" ></Button>
+                            <Button Grid.Row="0" Grid.Column="0" BorderBrush="#979797" BorderThickness="1" Tag="1" Click="buttonKeyPadButton_Click" Content="1" FontSize="18" ></Button>
+                            <Button Grid.Row="0" Grid.Column="1" BorderBrush="#979797" BorderThickness="1" Tag="2" Click="buttonKeyPadButton_Click" Content="2" FontSize="18" ></Button>
+                            <Button Grid.Row="0" Grid.Column="2" BorderBrush="#979797" BorderThickness="1" Tag="3" Click="buttonKeyPadButton_Click" Content="3" FontSize="18" ></Button>
+                            <Button Grid.Row="1" Grid.Column="0" BorderBrush="#979797" BorderThickness="1" Tag="4" Click="buttonKeyPadButton_Click" Content="4" FontSize="18" ></Button>
+                            <Button Grid.Row="1" Grid.Column="1" BorderBrush="#979797" BorderThickness="1" Tag="5" Click="buttonKeyPadButton_Click" Content="5" FontSize="18" ></Button>
+                            <Button Grid.Row="1" Grid.Column="2" BorderBrush="#979797" BorderThickness="1" Tag="6" Click="buttonKeyPadButton_Click" Content="6" FontSize="18" ></Button>
+                            <Button Grid.Row="2" Grid.Column="0" BorderBrush="#979797" BorderThickness="1" Tag="7" Click="buttonKeyPadButton_Click" Content="7" FontSize="18" ></Button>
+                            <Button Grid.Row="2" Grid.Column="1" BorderBrush="#979797" BorderThickness="1" Tag="8" Click="buttonKeyPadButton_Click" Content="8" FontSize="18" ></Button>
+                            <Button Grid.Row="2" Grid.Column="2" BorderBrush="#979797" BorderThickness="1" Tag="9" Click="buttonKeyPadButton_Click" Content="9" FontSize="18" ></Button>
+                            <Button Grid.Row="3" Grid.Column="0" BorderBrush="#979797" BorderThickness="1" Tag="*" Click="buttonKeyPadButton_Click" Content="*" FontSize="22" ></Button>
+                            <Button Grid.Row="3" Grid.Column="1" BorderBrush="#979797" BorderThickness="1" Tag="0" Click="buttonKeyPadButton_Click" Content="0" FontSize="18" ></Button>
+                            <Button Grid.Row="3" Grid.Column="2" BorderBrush="#979797" BorderThickness="1" Tag="#" Click="buttonKeyPadButton_Click" Content="#" FontSize="18" ></Button>
                         </Grid>
-                    </Border>
+                    </StackPanel>
                 </StackPanel>
 
             </Border>

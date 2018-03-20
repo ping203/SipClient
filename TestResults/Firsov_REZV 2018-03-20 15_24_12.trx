@@ -1,0 +1,42 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<TestRun id="6ed90a59-a2d5-4684-b154-2ae9549611b4" name="Firsov@REZV 2018-03-20 15:24:12" runUser="Rezv\Firsov" xmlns="http://microsoft.com/schemas/VisualStudio/TeamTest/2010">
+  <TestSettings name="Local" id="68e79b05-2663-4f46-8737-f155e3390c1f">
+    <Description>These are default test settings for a local test run.</Description>
+    <Deployment enabled="false" runDeploymentRoot="Firsov_REZV 2018-03-20 15_24_12">
+      <DeploymentItem filename="C:\Users\Firsov\Documents\Visual Studio 2010\Projects\SipClient\SipClient\bin\Debug\SipClient.exe" />
+    </Deployment>
+    <Execution>
+      <TestTypeSpecific />
+      <AgentRule name="Execution Agents">
+      </AgentRule>
+    </Execution>
+  </TestSettings>
+  <Times creation="2018-03-20T15:24:12.3085003+04:00" queuing="2018-03-20T15:24:13.4755003+04:00" start="2018-03-20T15:24:13.5655003+04:00" finish="2018-03-20T15:24:14.9275003+04:00" />
+  <ResultSummary outcome="Completed">
+    <Counters total="2" executed="2" passed="2" error="0" failed="0" timeout="0" aborted="0" inconclusive="0" passedButRunAborted="0" notRunnable="0" notExecuted="0" disconnected="0" warning="0" completed="0" inProgress="0" pending="0" />
+  </ResultSummary>
+  <TestDefinitions>
+    <UnitTest name="Test" storage="c:\users\firsov\documents\visual studio 2010\projects\sipclient\sipclienttesting\bin\x86\debug\sipclienttesting.dll" id="e2c17d9e-92ec-a3fb-56e0-5042f44776bb">
+      <Execution id="700f1100-77c2-4e9d-973b-33c51aef9023" />
+      <TestMethod codeBase="C:/Users/Firsov/Documents/Visual Studio 2010/Projects/SipClient/SipClientTesting/bin/x86/Debug/SipClientTesting.DLL" adapterTypeName="Microsoft.VisualStudio.TestTools.TestTypes.Unit.UnitTestAdapter, Microsoft.VisualStudio.QualityTools.Tips.UnitTest.Adapter, Version=10.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" className="SipClientTesting.UnitTest1, SipClientTesting, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null" name="Test" />
+    </UnitTest>
+    <UnitTest name="CheckIsNumber" storage="c:\users\firsov\documents\visual studio 2010\projects\sipclient\sipclienttesting\bin\x86\debug\sipclienttesting.dll" id="3bc89663-c014-795c-b8bc-52dcae934d5b">
+      <Execution id="2dc9ad49-0fca-455e-9648-9e63d5849c2c" />
+      <TestMethod codeBase="C:/Users/Firsov/Documents/Visual Studio 2010/Projects/SipClient/SipClientTesting/bin/x86/Debug/SipClientTesting.DLL" adapterTypeName="Microsoft.VisualStudio.TestTools.TestTypes.Unit.UnitTestAdapter, Microsoft.VisualStudio.QualityTools.Tips.UnitTest.Adapter, Version=10.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" className="SipClientTesting.UnitTest1, SipClientTesting, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null" name="CheckIsNumber" />
+    </UnitTest>
+  </TestDefinitions>
+  <TestLists>
+    <TestList name="Results Not in a List" id="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestList name="All Loaded Results" id="19431567-8539-422a-85d7-44ee4e166bda" />
+  </TestLists>
+  <TestEntries>
+    <TestEntry testId="3bc89663-c014-795c-b8bc-52dcae934d5b" executionId="2dc9ad49-0fca-455e-9648-9e63d5849c2c" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="e2c17d9e-92ec-a3fb-56e0-5042f44776bb" executionId="700f1100-77c2-4e9d-973b-33c51aef9023" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+  </TestEntries>
+  <Results>
+    <UnitTestResult executionId="2dc9ad49-0fca-455e-9648-9e63d5849c2c" testId="3bc89663-c014-795c-b8bc-52dcae934d5b" testName="CheckIsNumber" computerName="REZV" duration="00:00:00.0995919" startTime="2018-03-20T15:24:13.6735003+04:00" endTime="2018-03-20T15:24:14.6415003+04:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="2dc9ad49-0fca-455e-9648-9e63d5849c2c">
+    </UnitTestResult>
+    <UnitTestResult executionId="700f1100-77c2-4e9d-973b-33c51aef9023" testId="e2c17d9e-92ec-a3fb-56e0-5042f44776bb" testName="Test" computerName="REZV" duration="00:00:00.0001148" startTime="2018-03-20T15:24:14.6785003+04:00" endTime="2018-03-20T15:24:14.6975003+04:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="700f1100-77c2-4e9d-973b-33c51aef9023">
+    </UnitTestResult>
+  </Results>
+</TestRun>

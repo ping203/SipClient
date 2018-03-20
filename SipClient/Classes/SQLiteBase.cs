@@ -9,7 +9,7 @@ using System.Data;
 
 namespace SipClient.Classes
 {
-    class Records
+    class SQLiteBase
     {
         private static int MAX_RECORDS = 25;
         private static string _CONN_STR_TO_SQLITE_DB = string.Concat("Data Source=", Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), Properties.Resources.CallerDataBaseFileName);
@@ -19,7 +19,7 @@ namespace SipClient.Classes
         /// </summary>
         public static void AddRecordToDataBase(SipClient.Classes.CallRecord call)
         {
-            string sql = string.Format("insert into calls(Phone, TimeStart, TimeEnd, isIncoming) values('{0}' ,'{1}' ,'{2}' ,{3})", call.Phone, call.TimeStart, call.TimeEnd, call.isIncoming);
+            string sql = string.Format("insert into calls(Phone, TimeStart, TimeEnd, isIncoming, isOutcoming, isRejected) values('{0}' ,'{1}' ,'{2}' ,{3})", call.Phone, call.TimeStart, call.TimeEnd, call.isIncoming ? 1 : 0, call.isOutcoming ? 1 : 0, call.isRejected ? 1 : 0);
 
             using (var connection = new SQLiteConnection(_CONN_STR_TO_SQLITE_DB))
             {
@@ -65,22 +65,16 @@ namespace SipClient.Classes
         {
             if (connection.State != ConnectionState.Open)
                 throw new Exception("Connection is not open!");
-            //// get first phone record
-            //string phone = "null";
-            //using (SQLiteCommand cmd = new SQLiteCommand(string.Format("select Phone from calls order by TimeStart limit 1")
-            //   , connection))
-            //{
-            //    DataTable dt = new DataTable();
-            //    using (SQLiteDataReader rdr = cmd.ExecuteReader())
-            //    {
-            //        dt.Load(rdr);
-            //    }
-            //    phone = Convert.ToString(dt.Rows[0][0]);
-            //};
-            // remove him
-            using (SQLiteCommand cmd = new SQLiteCommand("delete from calls where rowid = 1;", connection))
+            // get first record
+            var dt = GetDataTable("select * from calls order by TimeStart desc limit 1");
+            if (dt != null && dt.Rows.Count > 0)
             {
-                cmd.ExecuteNonQuery();
+                string value = dt.Rows[0]["TimeStart"].ToString();
+                // remove him
+                using (SQLiteCommand cmd = new SQLiteCommand(string.Format("delete from calls where TimeStart = {0};", value), connection))
+                {
+                    cmd.ExecuteNonQuery();
+                }
             }
         }
 

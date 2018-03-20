@@ -20,8 +20,6 @@ namespace SipClient
     /// </summary>
     public partial class IncomingCallWindow : Window
     {
-        private static SoundPlayer soundPlayer = new SoundPlayer();
-
         public sipdotnet.Call Call { get; set; }
 
         public sipdotnet.Phone SoftPhone { get; set; }
@@ -53,9 +51,7 @@ namespace SipClient
 
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
-            // Play Sound
-            soundPlayer.Stream = Properties.Resources.signal;
-            soundPlayer.PlayLooping();
+            // Enable echo cancellation
             SoftPhone.GetMediaHandler.EchoCancellation(Call, true);
 
             // Load Information from mysql
@@ -85,17 +81,12 @@ namespace SipClient
 
         private void btnAccept_Click(object sender, RoutedEventArgs e)
         {
-            if (soundPlayer.IsLoadCompleted)
-                soundPlayer.Stop();
-
             // принимаем звонок 
             SoftPhone.ReceiveOrResumeCall(this.Call);
         }
 
         private void btnHoldOn_Click(object sender, RoutedEventArgs e)
         {
-            if (soundPlayer.IsLoadCompleted)
-                soundPlayer.Stop();
             // Если удерживаем звонок
             if (Call != null)
             {
@@ -105,8 +96,6 @@ namespace SipClient
 
         private void btnReject_Click(object sender, RoutedEventArgs e)
         {
-            if (soundPlayer.IsLoadCompleted)
-                soundPlayer.Stop();
             // отклоняем звонок 
             if (Call != null)
             {
@@ -117,8 +106,6 @@ namespace SipClient
 
         private void Window_Closed(object sender, EventArgs e)
         {
-            if (soundPlayer.IsLoadCompleted)
-                soundPlayer.Stop();
             if (this.Call != null && this.Call.GetState() != sipdotnet.Call.CallState.None)
                 SoftPhone.TerminateCall(this.Call);
         }

@@ -3,7 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Background="{x:Null}" AllowsTransparency="True" WindowStyle="None"
         Title="Settings" Loaded="Window_Loaded"
-         Icon="/SipClient;component/Resources/icon.ico"
+         Icon="/SipClient;component/Resources/Icons/icon.ico"
         WindowStartupLocation="CenterScreen" 
         MouseDown="Window_MouseDown" ResizeMode="NoResize" mc:Ignorable="d" xmlns:d="http://schemas.microsoft.com/expression/blend/2008" xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" d:DesignHeight="202" SizeToContent="WidthAndHeight">
     <Border Background="{x:Null}" BorderBrush="#4a71ef" BorderThickness="1">
@@ -32,7 +32,7 @@
                         <!-- exit button-->
                         <MenuItem Height="20" Width="20" Click="btnCloseClick">
                             <MenuItem.Icon>
-                                <Image Margin="-4" Source="/SipClient;component/Resources/close.png" />
+                                <Image Margin="-4" Source="/SipClient;component/Resources/Images/close.png" />
                             </MenuItem.Icon>
                         </MenuItem>
                     </Menu>

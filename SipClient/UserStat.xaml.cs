@@ -24,7 +24,7 @@ namespace SipClient
     public partial class UserStat : Window
     {
         private static UserStat instance;
-                 
+
         public static UserStat GetInstance
         {
             get
@@ -40,11 +40,13 @@ namespace SipClient
         private UserStat()
         {
             InitializeComponent();
+
+            this.Icon = PhoneWindow.ImageSourceFromBitmap(Properties.Resources.icon.ToBitmap());
         }
 
         public void ReloadTable()
         {
-            DataTable tab = Classes.Records.GetDataTable("select * from calls");
+            DataTable tab = Classes.SQLiteBase.GetDataTable("select * from calls");
             ProcessTable(tab);
         }
 
@@ -64,6 +66,15 @@ namespace SipClient
                 var s = Convert.ToString(row[name]);
                 return (!String.IsNullOrEmpty(s)) ? Convert.ToDateTime(s) : new DateTime();
             };
+
+            Func<DataRow, Bitmap> getBitmap = (DataRow row) =>
+                {
+                    return (Convert.ToInt32(row["isIncoming"]) == 1) ? Properties.Resources.inc_call
+                        : (Convert.ToInt32(row["isOutcoming"]) == 1) ? Properties.Resources.out_call
+                        : (Convert.ToInt32(row["isRejected"]) == 1) ? Properties.Resources.rej_call
+                        : Properties.Resources.close;
+                };
+
             // processing parallel
             int id = 0;
             var source = (from row in tab.AsEnumerable().AsParallel()
@@ -71,10 +82,13 @@ namespace SipClient
                           {
                               id = ++id,
                               phone = row["Phone"].ToString(),
-                              bitmap = (Convert.ToInt32(row["isIncoming"]) == 1) ? 
-                                Properties.Resources.inc_call : Properties.Resources.out_call ,
-                              callStart = getCallTime(row, "TimeStart") ,
-                              callEnd = getCallTime(row, "TimeEnd") ,
+                              bitmap = (Convert.ToInt32(row["isIncoming"]) == 1) ? Properties.Resources.inc_call
+                                        : (Convert.ToInt32(row["isOutcoming"]) == 1) ? Properties.Resources.out_call
+                                        : (Convert.ToInt32(row["isRejected"]) == 1) ? Properties.Resources.rej_call
+                                        : Properties.Resources.close
+                              ,
+                              callStart = getCallTime(row, "TimeStart"),
+                              callEnd = getCallTime(row, "TimeEnd"),
                           }).OrderBy(elem => elem.id);
 
             this.dgvCalls.ItemsSource = source;
@@ -102,6 +116,16 @@ namespace SipClient
             {
                 MessageBox.Show("left presed!");
             }
+        }
+
+        private void Item_MouseEnter(object sender, MouseEventArgs e)
+        {
+            (sender as Control).Background = System.Windows.Media.Brushes.WhiteSmoke;
+        }
+
+        private void Item_MouseLeave(object sender, MouseEventArgs e)
+        {
+            (sender as Control).Background = null;
         }
 
         // inherieted class, define cell of DataGrid
