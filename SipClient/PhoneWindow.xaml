@@ -8,23 +8,6 @@
         mc:Ignorable="d" xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
          SizeToContent="WidthAndHeight" d:DesignHeight="540" d:DesignWidth="306">
-    <!--Templates-->
-    <Window.Resources>
-        <ControlTemplate x:Key="ButtonTemplate" TargetType="Button">
-            <Border BorderBrush="Orange" BorderThickness="3" CornerRadius="2"
-                    TextBlock.Foreground="White">
-                <Border.Background>
-                    <LinearGradientBrush>
-                        <GradientStopCollection>
-                            <GradientStop Offset="0" Color="LimeGreen"></GradientStop>
-                            <GradientStop Offset="1" Color="LightBlue"></GradientStop>
-                        </GradientStopCollection>
-                    </LinearGradientBrush>
-                </Border.Background>
-                <ContentPresenter RecognizesAccessKey="True"></ContentPresenter>
-            </Border>
-        </ControlTemplate>
-    </Window.Resources>
     <Border>
         <Grid>
             <!--Gradient Background-->
@@ -58,7 +41,7 @@
                         <Image Source="/SipClient;component/Resources/Images/minimize.png"/>
                     </MenuItem.Icon>
                 </MenuItem>
-                <MenuItem Height="24" Width="24" HorizontalAlignment="Right" Click="btnCloseClick" MouseEnter="Item_MouseEnter" MouseLeave="Item_MouseLeave">
+                <MenuItem x:Name="btnClose" Height="24" Width="24" HorizontalAlignment="Right" Click="btnCloseClick" MouseEnter="Item_MouseEnter" MouseLeave="Item_MouseLeave">
                     <MenuItem.Icon>
                         <Image Source="/SipClient;component/Resources/Images/close.png"/>
                     </MenuItem.Icon>
@@ -113,13 +96,6 @@
                             <!-- Incoming call panel -->
                             <Border CornerRadius="0,10,10,10" Name="brdIncomingCall">
                                 <StackPanel Margin="2" >
-                                    <Border Margin="0,2,0,2" Background="White">
-                                        <StackPanel>
-                                            <Label x:Name="labelName" Content="Name Field"></Label>
-                                            <Label x:Name="labelAddress" Content="Addres Field"></Label>
-                                            <Label x:Name="labelPhone" Content="PhoneNumber"></Label>
-                                        </StackPanel>
-                                    </Border>
                                     <!--Buttons-->
                                     <Grid>
                                         <Grid.ColumnDefinitions>
@@ -128,33 +104,47 @@
                                             <ColumnDefinition></ColumnDefinition>
                                         </Grid.ColumnDefinitions>
                                         <Button x:Name="btnAccept" Background="White" Grid.Column="0" Margin="2,0,2,0" Padding="5" Click="btnAccept_Click" Content="Принять" MinWidth="50" MinHeight="30"  />
-                                        <Button x:Name="btnHoldOn" Background="White" Grid.Column="1" Margin="2,0,2,0" Padding="5" Click="btnHoldOn_Click" Content="Удерживать" MinWidth="50" MinHeight="30"/>
+                                        <Button x:Name="btnHoldOn" Background="White" Grid.Column="1" Margin="2,0,2,0" Padding="5" Click="btnTransfer_Click" Content="Удерживать" MinWidth="50" MinHeight="30"/>
                                         <Button x:Name="btnReject" Background="White" Grid.Column="2" Margin="2,0,2,0" Padding="5" Click="btnReject_Click" Content="Отклонить" MinWidth="50" MinHeight="30" />
                                         <!--<Label x:Name="lblTime" FontFamily="Courier New" FontSize="18" Content="00:00:"/>-->
                                     </Grid>
-                                </StackPanel>                                
-                            </Border>                          
+                                    <!--Inforamtion about caller-->
+                                    <Border Margin="2,4,2,0" Background="White" BorderBrush="#383838" 
+                                            CornerRadius="3" BorderThickness="2" Name="brdCallerInfo" Visibility="Collapsed">
+                                        <StackPanel>
+                                            <Label x:Name="lblPhone" Content="Phone" Visibility="Collapsed"></Label>
+                                            <Label x:Name="lblName" Content="Name" Visibility="Collapsed"></Label>
+                                            <Label x:Name="lblAddress" Content="Address" Visibility="Collapsed"></Label>
+                                        </StackPanel>
+                                    </Border>
+                                </StackPanel>
+                            </Border>
                         </StackPanel>
                     </Border>
                     <!--phoneNumber panel-->
                     <StackPanel>
-                        <Grid Height="40" Margin="5">
+                        <Grid Height="40" Margin="5,2,5,5">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition />
                                 <ColumnDefinition Width="60"/>
                             </Grid.ColumnDefinitions>
+
                             <Border x:Name="borderPhoneNumber" BorderBrush="Red" BorderThickness="1"  Margin="0,0,4,0" Grid.Column="0" CornerRadius="4,4,4,4">
                                 <StackPanel Orientation="Horizontal">
-                                    <TextBox x:Name="txtPhoneNumber" BorderBrush="#979797"
-                                         TextAlignment="Left" GotFocus="txtPhoneNumber_GotFocus" 
+                                    <TextBox x:Name="txtPhoneNumber" TextAlignment="Left" GotFocus="txtPhoneNumber_GotFocus" 
                                          LostFocus="txtPhoneNumber_LostFocus" FontSize="18" 
                                          MaxLength="13" Foreground="#979797" HorizontalAlignment="Left"
                                          Grid.ColumnSpan="2" MinWidth="160" TextChanged="txtPhoneNumber_TextChanged"/>
+
                                     <Button x:Name="btnPhoneNumberAdditional" Background="{x:Null}" MinWidth="40" Click="btnPhoneNumberAdditional_Click" >
                                         <ContentControl>
                                             <Image x:Name="btnAdditionalIcon" Source="/SipClient;component/Resources/Images/close.png" />
                                         </ContentControl>
-                                    </Button>
+                                        <Button.ContextMenu>
+                                            <ContextMenu x:Name="addItemsAdded" MouseLeftButtonDown="addItemsAdded_MouseDown">
+                                            </ContextMenu>
+                                        </Button.ContextMenu>
+                                        </Button> 
                                 </StackPanel>
                             </Border>
 

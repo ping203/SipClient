@@ -1,0 +1,42 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<TestRun id="c080b5ee-89f6-48ec-8a86-1413f64c869a" name="Firsov@REZV 2018-03-21 12:03:36" runUser="Rezv\Firsov" xmlns="http://microsoft.com/schemas/VisualStudio/TeamTest/2010">
+  <TestSettings name="Local" id="68e79b05-2663-4f46-8737-f155e3390c1f">
+    <Description>These are default test settings for a local test run.</Description>
+    <Deployment enabled="false" runDeploymentRoot="Firsov_REZV 2018-03-21 12_03_36">
+      <DeploymentItem filename="C:\Users\Firsov\Documents\Visual Studio 2010\Projects\SipClient\SipClient\bin\Debug\SipClient.exe" />
+    </Deployment>
+    <Execution>
+      <TestTypeSpecific />
+      <AgentRule name="Execution Agents">
+      </AgentRule>
+    </Execution>
+  </TestSettings>
+  <Times creation="2018-03-21T12:03:36.5295003+04:00" queuing="2018-03-21T12:03:37.6105003+04:00" start="2018-03-21T12:03:37.6995003+04:00" finish="2018-03-21T12:03:44.9115003+04:00" />
+  <ResultSummary outcome="Completed">
+    <Counters total="2" executed="2" passed="2" error="0" failed="0" timeout="0" aborted="0" inconclusive="0" passedButRunAborted="0" notRunnable="0" notExecuted="0" disconnected="0" warning="0" completed="0" inProgress="0" pending="0" />
+  </ResultSummary>
+  <TestDefinitions>
+    <UnitTest name="TestIncomingCallAnimationBegin" storage="c:\users\firsov\documents\visual studio 2010\projects\sipclient\sipclienttesting\bin\x86\debug\sipclienttesting.dll" id="b83e9b9e-16d7-415e-223f-be040ec2e9f5">
+      <Execution id="a301622f-77f8-424f-b0a7-1490e4f0ecc7" />
+      <TestMethod codeBase="C:/Users/Firsov/Documents/Visual Studio 2010/Projects/SipClient/SipClientTesting/bin/x86/Debug/SipClientTesting.DLL" adapterTypeName="Microsoft.VisualStudio.TestTools.TestTypes.Unit.UnitTestAdapter, Microsoft.VisualStudio.QualityTools.Tips.UnitTest.Adapter, Version=10.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" className="SipClientTesting.UnitTest1, SipClientTesting, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null" name="TestIncomingCallAnimationBegin" />
+    </UnitTest>
+    <UnitTest name="CheckIsNumber" storage="c:\users\firsov\documents\visual studio 2010\projects\sipclient\sipclienttesting\bin\x86\debug\sipclienttesting.dll" id="3bc89663-c014-795c-b8bc-52dcae934d5b">
+      <Execution id="cbc79a17-5be1-429f-8518-8f601ab08908" />
+      <TestMethod codeBase="C:/Users/Firsov/Documents/Visual Studio 2010/Projects/SipClient/SipClientTesting/bin/x86/Debug/SipClientTesting.DLL" adapterTypeName="Microsoft.VisualStudio.TestTools.TestTypes.Unit.UnitTestAdapter, Microsoft.VisualStudio.QualityTools.Tips.UnitTest.Adapter, Version=10.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" className="SipClientTesting.UnitTest1, SipClientTesting, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null" name="CheckIsNumber" />
+    </UnitTest>
+  </TestDefinitions>
+  <TestLists>
+    <TestList name="Results Not in a List" id="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestList name="All Loaded Results" id="19431567-8539-422a-85d7-44ee4e166bda" />
+  </TestLists>
+  <TestEntries>
+    <TestEntry testId="3bc89663-c014-795c-b8bc-52dcae934d5b" executionId="cbc79a17-5be1-429f-8518-8f601ab08908" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="b83e9b9e-16d7-415e-223f-be040ec2e9f5" executionId="a301622f-77f8-424f-b0a7-1490e4f0ecc7" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+  </TestEntries>
+  <Results>
+    <UnitTestResult executionId="cbc79a17-5be1-429f-8518-8f601ab08908" testId="3bc89663-c014-795c-b8bc-52dcae934d5b" testName="CheckIsNumber" computerName="REZV" duration="00:00:00.0574191" startTime="2018-03-21T12:03:37.7695003+04:00" endTime="2018-03-21T12:03:39.1415003+04:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="cbc79a17-5be1-429f-8518-8f601ab08908">
+    </UnitTestResult>
+    <UnitTestResult executionId="a301622f-77f8-424f-b0a7-1490e4f0ecc7" testId="b83e9b9e-16d7-415e-223f-be040ec2e9f5" testName="TestIncomingCallAnimationBegin" computerName="REZV" duration="00:00:00.6194814" startTime="2018-03-21T12:03:39.2405003+04:00" endTime="2018-03-21T12:03:39.8695003+04:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="a301622f-77f8-424f-b0a7-1490e4f0ecc7">
+    </UnitTestResult>
+  </Results>
+</TestRun>

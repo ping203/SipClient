@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.IO;
+using System.Threading;
 
 namespace SipClientTesting
 {
@@ -29,6 +30,9 @@ namespace SipClientTesting
             Assert.IsTrue(flag5);
         }
 
-      
+        [TestMethod]
+        public void TestIncomingCallAnimationBegin()
+        {
+        }
     }
 }

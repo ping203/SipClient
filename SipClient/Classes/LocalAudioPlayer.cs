@@ -4,13 +4,12 @@ using System.Linq;
 using System.Text;
 using System.Media;
 using System.Threading.Tasks;
+using System.Threading;
 
 namespace SipClient.Classes
 {
     public class LocalAudioPlayer
     {
-        private static SoundPlayer soundPlayer = new SoundPlayer();
-
         public static Dictionary<string, System.IO.UnmanagedMemoryStream> DTFMS_DICTONARY = new Dictionary<string, System.IO.UnmanagedMemoryStream>()
         {
             { "0", Properties.Resources.dtmf_0 },
@@ -27,36 +26,29 @@ namespace SipClient.Classes
             { "#", Properties.Resources.dtmf_hash },
         };
 
-        public static void PlaySound(System.IO.UnmanagedMemoryStream dtfm_stream)
-        {
-            if (dtfm_stream != null)
-            {
-                Task.Factory.StartNew(() =>
-                {
-                    soundPlayer.Stream = dtfm_stream;
-                    try
-                    {
-                        soundPlayer.Play();
-                    }
-                    catch (Exception)
-                    {
-                       
-                    }
-                   
-                });
-            }
-        }
+        private static SoundPlayer soundPlayer = new SoundPlayer();
 
-        public static void PlayIcnomingCallSound()
+        public static void PlaySound(System.IO.UnmanagedMemoryStream stream, bool isLoop = false)
         {
-            soundPlayer.Stream = Properties.Resources.signal;
-            soundPlayer.PlayLooping();
+            if (stream != null)
+            {
+                stream.Position = 0;
+                soundPlayer.Stream = null;
+                soundPlayer.Stream = stream;
+                if (isLoop)
+                    soundPlayer.PlayLooping();
+                else
+                    soundPlayer.Play();
+            }
         }
 
         public static void StopSound()
         {
             if (soundPlayer.IsLoadCompleted)
+            {
                 soundPlayer.Stop();
+                soundPlayer.Stream = null;
+            }
         }
     }
 }

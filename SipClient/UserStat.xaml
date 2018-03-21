@@ -37,7 +37,11 @@
 
         <Border Background="White" Margin="0,20,0,10">
             <StackPanel>
-                <DataGrid x:Name="dgvCalls" AutoGenerateColumns="False">
+                <DataGrid x:Name="dgvCalls" AutoGenerateColumns="False"
+                          ScrollViewer.CanContentScroll="True" 
+                          ScrollViewer.VerticalScrollBarVisibility="Auto"
+                          ScrollViewer.HorizontalScrollBarVisibility="Auto"
+                          MaxHeight="300">
                     <DataGrid.Columns>
                         <DataGridTextColumn Header="Id" Binding="{Binding id}"/>
                         <DataGridTextColumn Header="Телефон" Binding="{Binding phone}"/>

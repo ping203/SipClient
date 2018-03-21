@@ -19,7 +19,13 @@ namespace SipClient.Classes
         /// </summary>
         public static void AddRecordToDataBase(SipClient.Classes.CallRecord call)
         {
-            string sql = string.Format("insert into calls(Phone, TimeStart, TimeEnd, isIncoming, isOutcoming, isRejected) values('{0}' ,'{1}' ,'{2}' ,{3})", call.Phone, call.TimeStart, call.TimeEnd, call.isIncoming ? 1 : 0, call.isOutcoming ? 1 : 0, call.isRejected ? 1 : 0);
+            string sql = string.Format("insert into calls(Phone, TimeStart, TimeEnd, isIncoming, isOutcoming, isRejected) values('{0}' ,'{1}' ,'{2}' ,{3}, {4}, {5})", 
+                call.Phone, 
+                call.TimeStart,
+                call.TimeEnd, 
+                call.isIncoming ? 1 : 0, 
+                call.isOutcoming ? 1 : 0, 
+                call.isRejected ? 1 : 0);
 
             using (var connection = new SQLiteConnection(_CONN_STR_TO_SQLITE_DB))
             {
@@ -71,7 +77,7 @@ namespace SipClient.Classes
             {
                 string value = dt.Rows[0]["TimeStart"].ToString();
                 // remove him
-                using (SQLiteCommand cmd = new SQLiteCommand(string.Format("delete from calls where TimeStart = {0};", value), connection))
+                using (SQLiteCommand cmd = new SQLiteCommand(string.Format("delete from calls where TimeStart = '{0}';", value), connection))
                 {
                     cmd.ExecuteNonQuery();
                 }

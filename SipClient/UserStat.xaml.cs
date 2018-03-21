@@ -50,6 +50,27 @@ namespace SipClient
             ProcessTable(tab);
         }
 
+        public List<string> GetLastPhoneNumbers
+        {
+            get
+            {
+                List<string> answer = null;
+                var dt = new DataTable();
+                try
+                {
+                    dt = Classes.SQLiteBase.GetDataTable(@"select distinct(Phone) from calls where Phone != '' order by TimeStart;");
+                }
+                catch (Exception)
+                {
+                }
+                if (dt != null && dt.Rows.Count > 0)
+                {
+                    answer = dt.AsEnumerable().Select(row => row[0].ToString()).ToList();
+                }
+                return answer;
+            }
+        }
+
         private void ProcessTable(DataTable tab)
         {
             if (tab == null)
@@ -67,14 +88,6 @@ namespace SipClient
                 return (!String.IsNullOrEmpty(s)) ? Convert.ToDateTime(s) : new DateTime();
             };
 
-            Func<DataRow, Bitmap> getBitmap = (DataRow row) =>
-                {
-                    return (Convert.ToInt32(row["isIncoming"]) == 1) ? Properties.Resources.inc_call
-                        : (Convert.ToInt32(row["isOutcoming"]) == 1) ? Properties.Resources.out_call
-                        : (Convert.ToInt32(row["isRejected"]) == 1) ? Properties.Resources.rej_call
-                        : Properties.Resources.close;
-                };
-
             // processing parallel
             int id = 0;
             var source = (from row in tab.AsEnumerable().AsParallel()
@@ -89,7 +102,7 @@ namespace SipClient
                               ,
                               callStart = getCallTime(row, "TimeStart"),
                               callEnd = getCallTime(row, "TimeEnd"),
-                          }).OrderBy(elem => elem.id);
+                          }).OrderBy(elem => elem.id).ToList();
 
             this.dgvCalls.ItemsSource = source;
         }
