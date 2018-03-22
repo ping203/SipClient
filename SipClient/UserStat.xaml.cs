@@ -163,5 +163,17 @@ namespace SipClient
             }
 
         }
+
+        private void btnClearHistory_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                Classes.SQLiteBase.RemoveAllRecords();
+            }
+            catch (Exception exc)
+            {
+                MessageBox.Show(exc.Message + Environment.NewLine + exc.StackTrace);
+            }
+        }
     }
 }

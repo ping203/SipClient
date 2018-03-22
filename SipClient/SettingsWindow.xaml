@@ -2,66 +2,85 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Background="{x:Null}" AllowsTransparency="True" WindowStyle="None"
-        Title="Settings" Loaded="Window_Loaded"
+        Title="Настройки" Loaded="Window_Loaded"
          Icon="/SipClient;component/Resources/Icons/icon.ico"
         WindowStartupLocation="CenterScreen" 
-        MouseDown="Window_MouseDown" ResizeMode="NoResize" mc:Ignorable="d" xmlns:d="http://schemas.microsoft.com/expression/blend/2008" xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" d:DesignHeight="202" SizeToContent="WidthAndHeight">
-    <Border Background="{x:Null}" BorderBrush="#4a71ef" BorderThickness="1">
+        MouseDown="Window_MouseDown" ResizeMode="NoResize" mc:Ignorable="d" 
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+         SizeToContent="Height" Width="362"
+        BorderBrush="#4a71ef" BorderThickness="2">
+    <Grid>
+        <!--Gradient Background-->
+        <Rectangle>
+            <Rectangle.Fill>
+                <LinearGradientBrush>
+                    <GradientStop Color="#2aba3f" Offset="0"></GradientStop>
+                    <GradientStop Color="#5ee170" Offset="0.1"></GradientStop>
+                    <GradientStop Color="#5ee170" Offset="0.2"></GradientStop>
+                    <GradientStop Color="White" Offset="0.8"></GradientStop>
+                </LinearGradientBrush>
+            </Rectangle.Fill>
+        </Rectangle>
         <Grid>
-            <!--Gradient Background-->
-            <Rectangle>
-                <Rectangle.Fill>
-                    <LinearGradientBrush>
-                        <GradientStop Color="#2aba3f" Offset="0"></GradientStop>
-                        <GradientStop Color="#5ee170" Offset="0.1"></GradientStop>
-                        <GradientStop Color="#5ee170" Offset="0.2"></GradientStop>
-                        <GradientStop Color="White" Offset="0.8"></GradientStop>
-                    </LinearGradientBrush>
-                </Rectangle.Fill>
-            </Rectangle>
-
-            <Border BorderBrush="#4a71ef">
-                <Grid>
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="20"></RowDefinition>
-                        <RowDefinition></RowDefinition>
-                        <RowDefinition Height="30"></RowDefinition>
-                    </Grid.RowDefinitions>
-                    <TextBlock Padding="2" Text="Настройки приложения"></TextBlock>
-                    <Menu Background="{x:Null}" HorizontalAlignment="Right">
-                        <!-- exit button-->
-                        <MenuItem Height="20" Width="20" Click="btnCloseClick">
+            <StackPanel Orientation="Vertical">
+                
+                <DockPanel>
+                    <Label Content="Настройки" Background="{x:Null}" 
+                           Foreground="White" DockPanel.Dock="Left">
+                    </Label>
+                    <Menu Background="{x:Null}" Height="26" HorizontalAlignment="Right">
+                        <MenuItem Padding="0,4,0,4" Click="btnMinimizeClick" 
+                                  MouseEnter="Item_MouseEnter" 
+                                  MouseLeave="Item_MouseLeave">
                             <MenuItem.Icon>
-                                <Image Margin="-4" Source="/SipClient;component/Resources/Images/close.png" />
+                                <Image Width="20" Height="20" Source="/SipClient;component/Resources/Images/minimize.png"/>
+                            </MenuItem.Icon>
+                        </MenuItem>
+                        <MenuItem Padding="0,4,0,0" Click="btnCloseClick" 
+                                  MouseEnter="Item_MouseEnter" 
+                                  MouseLeave="Item_MouseLeave">
+                            <MenuItem.Icon>
+                                <Image Width="20" Height="20" Source="/SipClient;component/Resources/Images/close.png"/>
                             </MenuItem.Icon>
                         </MenuItem>
                     </Menu>
-                    <!--Contetnt block-->
-                    <Border Grid.Row="1" Margin="5,5,5,0" Background="AliceBlue" BorderBrush="#575757" BorderThickness="1" Height="104">
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="88"></ColumnDefinition>
-                                <ColumnDefinition Width="172"></ColumnDefinition>
-                            </Grid.ColumnDefinitions>
-                            <Border BorderBrush="#575757" BorderThickness="2" Padding="5,5,0,5" Margin="5,5,0,5">
-                                <StackPanel>
-                                    <TextBlock Text="Хост адресс"  Margin="5"></TextBlock>
-                                    <TextBlock Text="Логин"  Margin="5"></TextBlock>
-                                    <TextBlock Text="Пароль"  Margin="5"></TextBlock>
+                </DockPanel>
+                
+                <TabControl MinHeight="200" Background="#f3f3f3" TabStripPlacement="Left" MinWidth="300" >
+                    <TabItem Header="Соединение">
+                        <TabItem.Content>
+                            <StackPanel Orientation="Vertical">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="Хост адресс" MinWidth="80" Margin="5"></TextBlock>
+                                    <TextBox x:Name="txtHostAddress" MinWidth="150"></TextBox>
                                 </StackPanel>
-                            </Border>
-                            <Border Grid.Column="1" BorderBrush="#575757" BorderThickness="2" Padding="5" Margin="5">
-                                <StackPanel>
-                                    <TextBox x:Name="txtHostAddress" Margin="2"></TextBox>
-                                    <TextBox x:Name="txtLogin" Margin="2"></TextBox>
-                                    <PasswordBox x:Name="txtPassword" Margin="2" PasswordChar="*"></PasswordBox>
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="Порт" MinWidth="80" Margin="5"></TextBlock>
+                                    <TextBox x:Name="txtPort" MinWidth="150"></TextBox>
                                 </StackPanel>
-                            </Border>
-                        </Grid>
-                    </Border>
-                    <Button x:Name="btnAppend" Height="24" Grid.Row="2" Content="Принять" HorizontalAlignment="Center" Click="btnAppend_Click"></Button>
-                </Grid>
-            </Border>
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="Логин" MinWidth="80" Margin="5"></TextBlock>
+                                    <TextBox x:Name="txtLogin" MinWidth="150"></TextBox>
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="Пароль" MinWidth="80" Margin="5"></TextBlock>
+                                    <PasswordBox x:Name="txtPassword" MinWidth="150"></PasswordBox>
+                                </StackPanel>
+                            </StackPanel>
+                        </TabItem.Content>
+                    </TabItem>
+                    <TabItem Header="Устройства">
+                        <StackPanel>
+                            
+                        </StackPanel>
+                    </TabItem>
+                </TabControl>
+                <StackPanel Orientation="Horizontal" MinHeight="35" HorizontalAlignment="Right">
+                    <Button Name="btnOK" Content="OK" MinWidth="60" Margin="5" Click="btnAppend_Click"></Button>
+                    <Button Name="btnClose" Content="Закрыть" MinWidth="60" Margin="5" Click="btnCloseClick"></Button>
+                </StackPanel>
+            </StackPanel>
         </Grid>
-    </Border>
+    </Grid>
 </Window>

@@ -19,12 +19,12 @@ namespace SipClient.Classes
         /// </summary>
         public static void AddRecordToDataBase(SipClient.Classes.CallRecord call)
         {
-            string sql = string.Format("insert into calls(Phone, TimeStart, TimeEnd, isIncoming, isOutcoming, isRejected) values('{0}' ,'{1}' ,'{2}' ,{3}, {4}, {5})", 
-                call.Phone, 
+            string sql = string.Format("insert into calls(Phone, TimeStart, TimeEnd, isIncoming, isOutcoming, isRejected) values('{0}' ,'{1}' ,'{2}' ,{3}, {4}, {5})",
+                call.Phone,
                 call.TimeStart,
-                call.TimeEnd, 
-                call.isIncoming ? 1 : 0, 
-                call.isOutcoming ? 1 : 0, 
+                call.TimeEnd,
+                call.isIncoming ? 1 : 0,
+                call.isOutcoming ? 1 : 0,
                 call.isRejected ? 1 : 0);
 
             using (var connection = new SQLiteConnection(_CONN_STR_TO_SQLITE_DB))
@@ -61,7 +61,7 @@ namespace SipClient.Classes
             }
             recordsCount = Convert.IsDBNull(dt.Rows[0][0]) ? 0 : Convert.ToInt32(dt.Rows[0][0]);
 
-            return (recordsCount > MAX_RECORDS);
+            return (recordsCount >= MAX_RECORDS);
         }
 
         /// <summary>
@@ -72,12 +72,28 @@ namespace SipClient.Classes
             if (connection.State != ConnectionState.Open)
                 throw new Exception("Connection is not open!");
             // get first record
-            var dt = GetDataTable("select * from calls order by TimeStart desc limit 1");
+            var dt = GetDataTable("select * from calls order by TimeStart asc limit 1");
             if (dt != null && dt.Rows.Count > 0)
             {
                 string value = dt.Rows[0]["TimeStart"].ToString();
                 // remove him
                 using (SQLiteCommand cmd = new SQLiteCommand(string.Format("delete from calls where TimeStart = '{0}';", value), connection))
+                {
+                    cmd.ExecuteNonQuery();
+                }
+            }
+        }
+
+        public static void RemoveAllRecords()
+        {
+            using (var connection = new SQLiteConnection(_CONN_STR_TO_SQLITE_DB))
+            {
+                connection.Open();
+
+                if (connection.State != ConnectionState.Open)
+                    throw new Exception("Connection is not open!");
+
+                using (SQLiteCommand cmd = new SQLiteCommand("delete from calls;",connection))
                 {
                     cmd.ExecuteNonQuery();
                 }

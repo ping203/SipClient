@@ -112,5 +112,27 @@ namespace SipClient
                 MessageBox.Show(ex.ToString());
             }
         }
+
+         private void Item_MouseEnter(object sender, MouseEventArgs e)
+        {
+            if (sender is Control)
+            {
+                Control control = (sender as Control);
+                //if (control.Name == "btnClose")
+                //    control.Background = System.Windows.Media.Brushes.Purple;
+                //else
+                control.Background = System.Windows.Media.Brushes.WhiteSmoke;
+            }
+        }
+
+        private void Item_MouseLeave(object sender, MouseEventArgs e)
+        {
+            (sender as Control).Background = null;
+        }
+
+        private void btnMinimizeClick(object sender, RoutedEventArgs e)
+        {
+            this.WindowState = System.Windows.WindowState.Minimized;
+        }
     }
 }

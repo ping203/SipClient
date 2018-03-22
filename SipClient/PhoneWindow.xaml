@@ -2,12 +2,12 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" 
         ResizeMode="NoResize" Title="SipClient"
         WindowStartupLocation="CenterScreen" Loaded="Window_Loaded"
-        Icon="/SipClient;component/Resources/Icons/icon.ico" KeyDown="Window_KeyDown" 
+        Icon="/SipClient;component/Resources/Icons/icon.ico" 
         MouseDown="Window_MouseDown" Closing="Window_Closing" 
         WindowStyle="None" AllowsTransparency="True" BorderBrush="#4a71ef" BorderThickness="2" 
         mc:Ignorable="d" xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-         SizeToContent="WidthAndHeight" d:DesignHeight="540" d:DesignWidth="306">
+         SizeToContent="WidthAndHeight" d:DesignHeight="499" d:DesignWidth="306">
     <Border>
         <Grid>
             <!--Gradient Background-->
@@ -123,38 +123,51 @@
                     </Border>
                     <!--phoneNumber panel-->
                     <StackPanel>
-                        <Grid Height="40" Margin="5,2,5,5">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition />
-                                <ColumnDefinition Width="60"/>
-                            </Grid.ColumnDefinitions>
-
+                        <StackPanel Orientation="Horizontal" Height="40" Margin="5,2,5,5">
                             <Border x:Name="borderPhoneNumber" BorderBrush="Red" BorderThickness="1"  Margin="0,0,4,0" Grid.Column="0" CornerRadius="4,4,4,4">
                                 <StackPanel Orientation="Horizontal">
-                                    <TextBox x:Name="txtPhoneNumber" TextAlignment="Left" GotFocus="txtPhoneNumber_GotFocus" 
-                                         LostFocus="txtPhoneNumber_LostFocus" FontSize="18" 
-                                         MaxLength="13" Foreground="#979797" HorizontalAlignment="Left"
-                                         Grid.ColumnSpan="2" MinWidth="160" TextChanged="txtPhoneNumber_TextChanged"/>
-
-                                    <Button x:Name="btnPhoneNumberAdditional" Background="{x:Null}" MinWidth="40" Click="btnPhoneNumberAdditional_Click" >
+                                    <TextBox x:Name="txtPhoneNumber" TextAlignment="Left"  
+                                             GotFocus="txtPhoneNumber_GotFocus" 
+                                             LostFocus="txtPhoneNumber_LostFocus"
+                                             FontSize="18" Foreground="#979797"
+                                             HorizontalAlignment="Left"
+                                             Width="160"/>
+                                    <Button x:Name="btnPhoneNumberAdditional"
+                                            Background="{x:Null}" 
+                                            Click="btnPhoneNumberAdditional_Click" >
                                         <ContentControl>
                                             <Image x:Name="btnAdditionalIcon" Source="/SipClient;component/Resources/Images/close.png" />
                                         </ContentControl>
-                                        <Button.ContextMenu>
-                                            <ContextMenu x:Name="addItemsAdded" MouseLeftButtonDown="addItemsAdded_MouseDown">
-                                            </ContextMenu>
-                                        </Button.ContextMenu>
-                                        </Button> 
+                                    </Button>
                                 </StackPanel>
                             </Border>
 
-                            <Button x:Name="btnConnectOrReject" Click="btnConnectOrReject_Click"
-                                    BorderBrush="#979797" BorderThickness="1" Grid.Column="1">
+                            <Button x:Name="btnConnectOrReject" MinWidth="60" Click="btnConnectOrReject_Click" HorizontalAlignment="Right">
                                 <ContentControl>
                                     <Image x:Name="PhoneIcon" Source="/SipClient;component/Resources/Images/call-end.png"/>
                                 </ContentControl>
-                            </Button>
-                        </Grid>
+                            </Button>                            
+                        </StackPanel>
+                        <!-- info panel -->
+                        <DataGrid Name="dgvCallList" 
+                                  Visibility="Collapsed" 
+                                  AutoGenerateColumns="False"
+                                  HeadersVisibility="None"
+                                  MaxHeight="100" 
+                                  ScrollViewer.CanContentScroll="True"
+                                  ScrollViewer.VerticalScrollBarVisibility="Auto"
+                                  ScrollViewer.HorizontalScrollBarVisibility="Disabled" >
+                            <DataGrid.Columns>
+                                <DataGridTemplateColumn IsReadOnly="True">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <Image Source="{Binding img}"/>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                                <DataGridTextColumn Binding="{Binding phone}" IsReadOnly="True" />
+                            </DataGrid.Columns>
+                        </DataGrid>
                         <!--Numpad-->
                         <Grid Background="white">
                             <Grid.RowDefinitions>

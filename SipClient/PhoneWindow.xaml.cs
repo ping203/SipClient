@@ -75,6 +75,13 @@ namespace SipClient
             this.txtPhoneNumber.Text = _PHONE_NUMBER_HELP;
             this.SpeakerOff = false;
             this.MicrophoneOff = false;
+
+            this.txtPhoneNumber.PreviewMouseLeftButtonDown += new MouseButtonEventHandler(txtPhoneNumber_PreviewMouseLeftButtonDown);
+            this.txtPhoneNumber.GotFocus += new RoutedEventHandler(txtPhoneNumber_GotFocus);
+            this.txtPhoneNumber.LostFocus += new RoutedEventHandler(txtPhoneNumber_LostFocus);
+            this.txtPhoneNumber.TextChanged += new TextChangedEventHandler(txtPhoneNumber_TextChanged);
+            this.txtPhoneNumber.KeyDown += new KeyEventHandler(txtPhoneNumber_KeyDown);
+
         }
 
         void Window_Loaded(object sender, RoutedEventArgs e)
@@ -83,7 +90,7 @@ namespace SipClient
             {
                 // SoftPhone initialize
                 InitializeSoftphone();
-           
+
                 // Create Client connection
                 InitializeWcfClient();
             });
@@ -233,55 +240,57 @@ namespace SipClient
             });
         }
 
-#warning НеобходимыПравки!
         // Звонок завершился
         private void softphone_CallCompletedEvent(Call call)
         {
-            if (isIncoming)
+#warning НеобходимыПравки!
+            Task.Factory.StartNew(() =>
             {
-                // write to database 
-                try
+                if (isIncoming)
                 {
-                    RecordToLocalDataBase.isIncoming = true;
-                    RecordToLocalDataBase.TimeEnd = DateTime.Now;
-                    Classes.SQLiteBase.AddRecordToDataBase(RecordToLocalDataBase);
+                    // write to database 
+                    try
+                    {
+                        RecordToLocalDataBase.isIncoming = true;
+                        RecordToLocalDataBase.TimeEnd = DateTime.Now;
+                        Classes.SQLiteBase.AddRecordToDataBase(RecordToLocalDataBase);
+                    }
+                    catch (Exception e)
+                    {
+                        MessageBox.Show(e.Message + Environment.NewLine + e.StackTrace);
+                    }
+                    // drop down Incoming call form
+                    InvokeGUIThread(() =>
+                    {
+                        ResetCallerInfoPanelAttributes();
+                        //AnimationEnd(0.5, this.brdIncomingCall);
+                        //remove info panel
+                        //this.brdCallerInfo.Child = null;
+                    });                   
                 }
-                catch (Exception e)
+                else if (isOutcoming) // outcoming call
                 {
-                    MessageBox.Show(e.Message + Environment.NewLine + e.StackTrace);
+                    // write to database
+                    try
+                    {
+                        RecordToLocalDataBase.isOutcoming = true;
+                        RecordToLocalDataBase.TimeEnd = DateTime.Now;
+                        Classes.SQLiteBase.AddRecordToDataBase(RecordToLocalDataBase);
+                    }
+                    catch (Exception e)
+                    {
+                        MessageBox.Show(e.Message + Environment.NewLine + e.StackTrace);
+                    }
                 }
-                // drop down Incoming call form
-                InvokeGUIThread(() =>
+                else // rejected or another type
                 {
-                    ResetCallerInfoPanelAttributes();
-                    //AnimationEnd(0.5, this.brdIncomingCall);
-                    //remove info panel
-                    //this.brdCallerInfo.Child = null;
-                });
 
-                // clear flag
+                }
+
+                // clear flags
                 isIncoming = false;
-            }
-            else if (isOutcoming) // outcoming call
-            {
-                // write to database
-                try
-                {
-                    RecordToLocalDataBase.isOutcoming = true;
-                    RecordToLocalDataBase.TimeEnd = DateTime.Now;
-                    Classes.SQLiteBase.AddRecordToDataBase(RecordToLocalDataBase);
-                }
-                catch (Exception e)
-                {
-                    MessageBox.Show(e.Message + Environment.NewLine + e.StackTrace);
-                }
-                // clear flag
                 isOutcoming = false;
-            }
-            else // rejected or another type
-            {
-
-            }
+            });
 
             this.call = null;
 
@@ -296,9 +305,7 @@ namespace SipClient
                 //TimerDisable();
             });
 
-            // sound notification
-            Classes.LocalAudioPlayer.PlaySound(Properties.Resources.notification_call_ended);
-
+            Classes.LocalAudioPlayer.StopSound();
         }
 
         // Звонок принят или исходящий
@@ -306,14 +313,22 @@ namespace SipClient
         {
             if (isIncoming)
             {
-                if (this.call != null) // have actieve connection to client
-                {
+                Task.Factory.StartNew(() =>
+              {
+                  // sound notification off
+                  Classes.LocalAudioPlayer.StopSound();
 
-                }
+                  // write incoming call to base
+                  RecordToLocalDataBase.Phone = GetPhone(this.call.GetFrom());
+                  RecordToLocalDataBase.TimeStart = DateTime.Now;
+                  RecordToLocalDataBase.isRejected = false;
+              });
             }
             else
             {
                 this.call = call;
+                // set outcoming call flag
+                isOutcoming = true;
 
                 InvokeGUIThread(() =>
                 {
@@ -323,17 +338,18 @@ namespace SipClient
                     // set new call volume
                     var volValue = this.volumeSlider.Value;
                     softphone.GetMediaHandler.SetSpeakerSound(this.call, (float)(volValue % 100));
+                });             
+
+                Task.Factory.StartNew(() =>
+                {
+                    // Enable timer clockdown
+                    // TimerEnable();  
+
+                    // write call start time
+                    RecordToLocalDataBase.Phone = GetPhone(this.call.GetFrom());
+                    RecordToLocalDataBase.isOutcoming = true;
+                    RecordToLocalDataBase.TimeStart = DateTime.Now;
                 });
-
-                // Enable timer clockdown
-                // TimerEnable();  
-
-                // write call start time
-                RecordToLocalDataBase.Phone = GetPhone(this.call.GetFrom());
-                RecordToLocalDataBase.TimeStart = DateTime.Now;
-
-                // set outcoming call flag
-                isOutcoming = true;
             }
         }
 
@@ -359,10 +375,20 @@ namespace SipClient
             // Recieve incoming call
             this.call = incomingCall;
 
-            // write incoming call to base
-            RecordToLocalDataBase.Phone = GetPhone(this.call.GetFrom());
-            RecordToLocalDataBase.TimeStart = DateTime.Now;
-            RecordToLocalDataBase.isIncoming = true;
+            Task.Factory.StartNew(() =>
+            {
+                // write rejected call to base
+                RecordToLocalDataBase.Phone = GetPhone(incomingCall.GetFrom());
+                RecordToLocalDataBase.TimeStart = DateTime.Now;
+                RecordToLocalDataBase.isRejected = true;
+
+                // Play Sound
+                Classes.LocalAudioPlayer.PlaySound(Properties.Resources.signal, true);
+
+                // Get information about caller
+                GetInfoAboutCaller(this.call.GetFrom());
+
+            });
 
             InvokeGUIThread(() =>
             {
@@ -373,12 +399,6 @@ namespace SipClient
                 // Do incoming call panel animation
                 //AnimationBegin(0.5, brdIncomingCall_Height_Prop_Default, this.brdIncomingCall);
             });
-
-            // Play Sound
-            Classes.LocalAudioPlayer.PlaySound(Properties.Resources.signal, true);
-
-            // Get information about caller
-            GetInfoAboutCaller(this.call.GetFrom());
         }
 
         /// <summary>
@@ -394,9 +414,12 @@ namespace SipClient
             // use wcf connection
             try
             {
-                var clientInfo = WcfClient.GetClinetInformation(phone);
+                if (this.call != null)
+                {
+                    var clientInfo = WcfClient.GetClinetInformation(phone);
 
-                InvokeGUIThread(() => { SetCallerInfoPanelAttributes(clientInfo.Phone, clientInfo.Name, clientInfo.Address); });
+                    InvokeGUIThread(() => { SetCallerInfoPanelAttributes(clientInfo.Phone, clientInfo.Name, clientInfo.Address); });
+                }
             }
             catch (Exception e)
             {
@@ -406,7 +429,7 @@ namespace SipClient
             }
 
             // Use Mysql connection
-            if (tryToUseMySQL)
+            if (tryToUseMySQL && this.call != null)
             {
                 var tabCallerInfo = Classes.MainDataBase.GetDataTable(
                             string.Format(
@@ -440,6 +463,9 @@ namespace SipClient
         // Установка инфы о пользователе
         private void SetCallerInfoPanelAttributes(string phone, string name, string address)
         {
+            if (this.call == null)
+                return;
+
             if (!String.IsNullOrEmpty(phone))
             {
                 lblPhone.Content = "Телефонный номер : " + phone;
@@ -601,133 +627,110 @@ namespace SipClient
             }
         }
 
-        private void txtPhoneNumber_GotFocus(object sender, RoutedEventArgs e)
-        {
-            //change background color
-            this.borderPhoneNumber.BorderBrush = System.Windows.Media.Brushes.Red;
-
-            // Если в поле шаблон -> сбрасываем его
-            if (txtPhoneNumber.Text.Equals(_PHONE_NUMBER_HELP))
-            {
-                InvokeGUIThread(() =>
-                {
-                    txtPhoneNumber.Text = String.Empty;
-                });
-            }
-        }
-
-        private void txtPhoneNumber_LostFocus(object sender, RoutedEventArgs e)
-        {
-            //change background color
-            this.borderPhoneNumber.BorderBrush = System.Windows.Media.Brushes.Green;
-
-            // если введеный текст не похож на шабло и не пустая строка -> выходим
-            //if (txtPhoneNumber.Text.Equals(_PHONE_NUMBER_HELP))
-            //    return;
-            //else if (string.IsNullOrEmpty(txtPhoneNumber.Text)) /* && !IsPhoneNumber(text))*/
-            //{
-            //    InvokeGUIThread(() =>
-            //    {
-            //        txtPhoneNumber.Text = _PHONE_NUMBER_HELP;
-            //    });
-            //}
-        }
-
-        private void Window_KeyDown(object sender, KeyEventArgs e)
-        {
-            switch (e.Key)
-            {
-                // Remove last characters
-                case Key.Back:
-                case Key.Delete:
-                    if (!txtPhoneNumber.Text.Equals(_PHONE_NUMBER_HELP) && !(txtPhoneNumber.Text.Length == 0))
-                    {
-                        txtPhoneNumber.Text = txtPhoneNumber.Text.Remove(txtPhoneNumber.Text.Length - 1, 1);
-                    }
-                    break;
-                // short input keys
-                case Key.NumPad0:
-                case Key.D0:
-                    {
-                        //put number                
-                        PutNumberWithDTMF("0");
-                    }
-                    break;
-                case Key.NumPad1:
-                case Key.D1:
-                    {
-                        //put number                
-                        PutNumberWithDTMF("1");
-                    }
-                    break;
-                case Key.NumPad2:
-                case Key.D2:
-                    {
-                        //put number                
-                        PutNumberWithDTMF("2");
-                    }
-                    break;
-                case Key.NumPad3:
-                case Key.D3:
-                    {
-                        //put number                
-                        PutNumberWithDTMF("3");
-                    }
-                    break;
-                case Key.NumPad4:
-                case Key.D4:
-                    {
-                        //put number                
-                        PutNumberWithDTMF("4");
-                    }
-                    break;
-                case Key.NumPad5:
-                case Key.D5:
-                    {
-                        //put number                
-                        PutNumberWithDTMF("5");
-                    }
-                    break;
-                case Key.NumPad6:
-                case Key.D6:
-                    {
-                        //put number                
-                        PutNumberWithDTMF("6");
-                    }
-                    break;
-                case Key.NumPad7:
-                case Key.D7:
-                    {
-                        //put number                
-                        PutNumberWithDTMF("7");
-                    }
-                    break;
-                case Key.NumPad8:
-                case Key.D8:
-                    {
-                        //put number                
-                        PutNumberWithDTMF("8");
-                    }
-                    break;
-                case Key.NumPad9:
-                case Key.D9:
-                    {
-                        //put number                
-                        PutNumberWithDTMF("9");
-                    }
-                    break;
-                // calling to number
-                case Key.Enter:
-                    {
-                        if (!txtPhoneNumber.Text.Equals(_PHONE_NUMBER_HELP))
-                        {
-                            string phoneNumber = txtPhoneNumber.Text;
-                            CallTo(phoneNumber);
-                        }
-                    }
-                    break;
-            }
-        }
+        //private void Window_KeyDown(object sender, KeyEventArgs e)
+        //{
+        //    switch (e.Key)
+        //    {
+        //        // Remove last characters
+        //        case Key.Back:
+        //        case Key.Delete:
+        //            if (!txtPhoneNumber.Text.Equals(_PHONE_NUMBER_HELP) && !(txtPhoneNumber.Text.Length == 0))
+        //            {
+        //                txtPhoneNumber.Text = txtPhoneNumber.Text.Remove(txtPhoneNumber.Text.Length - 1, 1);
+        //            }
+        //            break;
+        //        // short input keys
+        //        case Key.NumPad0:
+        //        case Key.D0:
+        //            {
+        //                buttonKeyPadButton_Click(new Button() { Content = 0 }, e);
+        //                // PutNumberWithDTMF("0");
+        //            }
+        //            break;
+        //        case Key.NumPad1:
+        //        case Key.D1:
+        //            {
+        //                //put number     
+        //                buttonKeyPadButton_Click(new Button() { Content = 1 }, e);
+        //                //PutNumberWithDTMF("1");
+        //            }
+        //            break;
+        //        case Key.NumPad2:
+        //        case Key.D2:
+        //            {
+        //                //put number                
+        //                buttonKeyPadButton_Click(new Button() { Content = 2 }, e);
+        //                //PutNumberWithDTMF("2");
+        //            }
+        //            break;
+        //        case Key.NumPad3:
+        //        case Key.D3:
+        //            {
+        //                //put number      
+        //                buttonKeyPadButton_Click(new Button() { Content = 3 }, e);
+        //                //PutNumberWithDTMF("3");
+        //            }
+        //            break;
+        //        case Key.NumPad4:
+        //        case Key.D4:
+        //            {
+        //                //put number 
+        //                buttonKeyPadButton_Click(new Button() { Content = 4 }, e);
+        //                //PutNumberWithDTMF("4");
+        //            }
+        //            break;
+        //        case Key.NumPad5:
+        //        case Key.D5:
+        //            {
+        //                //put number     
+        //                buttonKeyPadButton_Click(new Button() { Content = 5 }, e);
+        //                //PutNumberWithDTMF("5");
+        //            }
+        //            break;
+        //        case Key.NumPad6:
+        //        case Key.D6:
+        //            {
+        //                //put number
+        //                buttonKeyPadButton_Click(new Button() { Content = 6 }, e);
+        //                //PutNumberWithDTMF("6");
+        //            }
+        //            break;
+        //        case Key.NumPad7:
+        //        case Key.D7:
+        //            {
+        //                //put number           
+        //                buttonKeyPadButton_Click(new Button() { Content = 7 }, e);
+        //                //PutNumberWithDTMF("7");
+        //            }
+        //            break;
+        //        case Key.NumPad8:
+        //        case Key.D8:
+        //            {
+        //                //put number     
+        //                buttonKeyPadButton_Click(new Button() { Content = 8 }, e);
+        //                //PutNumberWithDTMF("8");
+        //            }
+        //            break;
+        //        case Key.NumPad9:
+        //        case Key.D9:
+        //            {
+        //                //put number      
+        //                buttonKeyPadButton_Click(new Button() { Content = 9 }, e);
+        //                //PutNumberWithDTMF("9");
+        //            }
+        //            break;
+        //        // calling to number
+        //        case Key.Enter:
+        //            {
+        //                if (!txtPhoneNumber.Text.Equals(_PHONE_NUMBER_HELP))
+        //                {
+        //                    string phoneNumber = txtPhoneNumber.Text;
+        //                    CallTo(phoneNumber);
+        //                }
+        //            }
+        //            break;
+        //    }
+        //}
 
         private void btnMinimizeClick(object sender, RoutedEventArgs e)
         {
@@ -789,9 +792,6 @@ namespace SipClient
 
         private void buttonKeyPadButton_Click(object sender, RoutedEventArgs e)
         {
-            if (txtPhoneNumber.Text.Length > 13)
-                return;
-
             var btn = sender as Button;
 
             if (call == null && btn.Content.Equals('#')) return;
@@ -819,27 +819,38 @@ namespace SipClient
 
         private void CheckButtonAdditionalIcon()
         {
-            if (this.txtPhoneNumber.Text == _PHONE_NUMBER_HELP || this.txtPhoneNumber.Text == string.Empty)
+
+            InvokeGUIThread(() =>
             {
-                InvokeGUIThread(() =>
-                {
-                    this.btnAdditionalIcon.Source = PhoneWindow.ImageSourceFromBitmap(Properties.Resources.down);
-                });
-            }
-            else
-            {
-                InvokeGUIThread(() =>
-                {
-                    this.btnAdditionalIcon.Source = PhoneWindow.ImageSourceFromBitmap(Properties.Resources.close);
-                });
-            }
+                this.btnAdditionalIcon.Source = PhoneWindow.ImageSourceFromBitmap(Properties.Resources.close);
+            });
+
+
+            //if (this.txtPhoneNumber.Text == _PHONE_NUMBER_HELP || this.txtPhoneNumber.Text == string.Empty)
+            //{
+            //    InvokeGUIThread(() =>
+            //    {
+            //        this.btnAdditionalIcon.Source = PhoneWindow.ImageSourceFromBitmap(Properties.Resources.down);
+            //    });
+            //}
+            //else
+            //{
+            //    InvokeGUIThread(() =>
+            //    {
+            //        this.btnAdditionalIcon.Source = PhoneWindow.ImageSourceFromBitmap(Properties.Resources.close);
+            //    });
+            //}
         }
 
         private void PutNumberWithDTMF(string symb)
         {
             // Если не подсказка для ввода текста
             if (txtPhoneNumber.Text.Equals(_PHONE_NUMBER_HELP))
+            {
+                txtPhoneNumber.TextChanged -= new TextChangedEventHandler(txtPhoneNumber_TextChanged);
                 txtPhoneNumber.Text = String.Empty;
+                txtPhoneNumber.TextChanged += new TextChangedEventHandler(txtPhoneNumber_TextChanged);
+            }
 
             // Play Sound
             Classes.LocalAudioPlayer.PlaySound(Classes.LocalAudioPlayer.DTFMS_DICTONARY[symb]);
@@ -853,7 +864,7 @@ namespace SipClient
 
         private void btnVolumeOffOn(object sender, RoutedEventArgs e)
         {
-            SpeakerOff = !SpeakerOff;  
+            SpeakerOff = !SpeakerOff;
 
             ChangeIcons();
         }
@@ -873,8 +884,10 @@ namespace SipClient
         {
             if (!SpeakerOff)
             {
-                InvokeGUIThread(() => { this.SpeakerIcon.Source = ImageSourceFromBitmap(Properties.Resources.speaker_on_64x64);
-                this.volumeSlider.Value = volumeSliderValue;
+                InvokeGUIThread(() =>
+                {
+                    this.SpeakerIcon.Source = ImageSourceFromBitmap(Properties.Resources.speaker_on_64x64);
+                    this.volumeSlider.Value = volumeSliderValue;
                 });
             }
             else
@@ -1080,50 +1093,184 @@ namespace SipClient
         // Дпоплнительный контрол для поля ввода телефонного номера
         private void btnPhoneNumberAdditional_Click(object sender, RoutedEventArgs e)
         {
-            if (txtPhoneNumber.Text == _PHONE_NUMBER_HELP || txtPhoneNumber.Text == "")
-            {
-                var list = UserStat.GetInstance.GetLastPhoneNumbers;
-                // выводим список
-                if (list != null && list.Count > 0)
-                {
-#warning WatchLastCalls
-                    addItemsAdded.ItemsSource = list;
+            txtPhoneNumber.Text = "";
 
-                    //this.btnPhoneNumberAdditional.ContextMenu = menu;
-                    ////this.btnPhoneNumberAdditional.ContextMenu.IsEnabled = true;
-                    ////this.btnPhoneNumberAdditional.ContextMenu.PlacementTarget = (sender as Button);
-                    ////this.btnPhoneNumberAdditional.ContextMenu.Placement = System.Windows.Controls.Primitives.PlacementMode.Bottom;
+            //            if (txtPhoneNumber.Text == _PHONE_NUMBER_HELP || txtPhoneNumber.Text == "")
+            //            {
+            //                var list = UserStat.GetInstance.GetLastPhoneNumbers;
+            //                // выводим список
+            //                if (list != null && list.Count > 0)
+            //                {
+            //#warning WatchLastCalls
 
-                    ////this.btnPhoneNumberAdditional.ContextMenu.MouseLeftButtonDown += new MouseButtonEventHandler(ContextMenu_MouseLeftButtonDown);
-
-                    this.btnPhoneNumberAdditional.ContextMenu.IsOpen = true;
-                }
-            }
-            else
-            {
-                txtPhoneNumber.Text = "";
-            }
+            //                }
+            //            }
+            //            else
+            //            {
+            //                txtPhoneNumber.Text = "";
+            //            }
         }
 
-        private void txtPhoneNumber_TextChanged(object sender, TextChangedEventArgs e)
+        #region txtPhoneNumberEvents
+
+        private void txtPhoneNumber_GotFocus(object sender, RoutedEventArgs e)
         {
-            this.KeyDown -= new KeyEventHandler(Window_KeyDown);
-
-            CheckButtonAdditionalIcon();
+            //change background color
+            this.borderPhoneNumber.BorderBrush = System.Windows.Media.Brushes.Red;
         }
+
+        private void txtPhoneNumber_LostFocus(object sender, RoutedEventArgs e)
+        {
+            //change background color
+            this.borderPhoneNumber.BorderBrush = System.Windows.Media.Brushes.Green;
+
+            if (txtPhoneNumber.Text == "")
+            {
+                txtPhoneNumber.Text = _PHONE_NUMBER_HELP;
+            }
+        }
+
+        void txtPhoneNumber_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.IsRepeat)
+            {
+                e.Handled = true;
+            }
+#warning отсекаем ввод букв с клавиатуры
+            if (e.Key >= Key.A && e.Key <= Key.Z)
+            {
+                e.Handled = true;
+                return;
+            }
+
+            if (txtPhoneNumber.Text.Equals(_PHONE_NUMBER_HELP))
+            {
+                txtPhoneNumber.TextChanged -= new TextChangedEventHandler(txtPhoneNumber_TextChanged);
+                txtPhoneNumber.Text = "";
+                txtPhoneNumber.TextChanged += new TextChangedEventHandler(txtPhoneNumber_TextChanged);
+            }
+
+            switch (e.Key)
+            {
+                // Remove last characters
+                case Key.Back:
+                case Key.Delete:
+                    if (!txtPhoneNumber.Text.Equals(_PHONE_NUMBER_HELP) && !(txtPhoneNumber.Text.Length == 0))
+                    {
+                        txtPhoneNumber.Text = txtPhoneNumber.Text.Remove(txtPhoneNumber.Text.Length - 1, 1);
+                    }
+                    break;
+                // short input keys
+                case Key.NumPad0:
+                case Key.D0:
+                    {
+                        // Play Sound
+                        Classes.LocalAudioPlayer.PlaySound(Classes.LocalAudioPlayer.DTFMS_DICTONARY["0"]);
+                    }
+                    break;
+                case Key.NumPad1:
+                case Key.D1:
+                    {
+                        // Play Sound
+                        Classes.LocalAudioPlayer.PlaySound(Classes.LocalAudioPlayer.DTFMS_DICTONARY["1"]);
+                    }
+                    break;
+                case Key.NumPad2:
+                case Key.D2:
+                    {
+                        // Play Sound
+                        Classes.LocalAudioPlayer.PlaySound(Classes.LocalAudioPlayer.DTFMS_DICTONARY["2"]);
+                    }
+                    break;
+                case Key.NumPad3:
+                case Key.D3:
+                    {
+                        // Play Sound
+                        Classes.LocalAudioPlayer.PlaySound(Classes.LocalAudioPlayer.DTFMS_DICTONARY["3"]);
+                    }
+                    break;
+                case Key.NumPad4:
+                case Key.D4:
+                    {
+                        // Play Sound
+                        Classes.LocalAudioPlayer.PlaySound(Classes.LocalAudioPlayer.DTFMS_DICTONARY["4"]);
+                    }
+                    break;
+                case Key.NumPad5:
+                case Key.D5:
+                    {
+                        // Play Sound
+                        Classes.LocalAudioPlayer.PlaySound(Classes.LocalAudioPlayer.DTFMS_DICTONARY["5"]);
+                    }
+                    break;
+                case Key.NumPad6:
+                case Key.D6:
+                    {
+                        // Play Sound
+                        Classes.LocalAudioPlayer.PlaySound(Classes.LocalAudioPlayer.DTFMS_DICTONARY["6"]);
+                    }
+                    break;
+                case Key.NumPad7:
+                case Key.D7:
+                    {
+                        // Play Sound
+                        Classes.LocalAudioPlayer.PlaySound(Classes.LocalAudioPlayer.DTFMS_DICTONARY["7"]);
+                    }
+                    break;
+                case Key.NumPad8:
+                case Key.D8:
+                    {
+                        // Play Sound
+                        Classes.LocalAudioPlayer.PlaySound(Classes.LocalAudioPlayer.DTFMS_DICTONARY["8"]);
+                    }
+                    break;
+                case Key.NumPad9:
+                case Key.D9:
+                    {
+                        // Play Sound
+                        Classes.LocalAudioPlayer.PlaySound(Classes.LocalAudioPlayer.DTFMS_DICTONARY["9"]);
+                    }
+                    break;
+                // calling to number
+                case Key.Enter:
+                    {
+                        if (!txtPhoneNumber.Text.Equals(_PHONE_NUMBER_HELP))
+                        {
+                            string phoneNumber = txtPhoneNumber.Text;
+                            CallTo(phoneNumber);
+                        }
+                    }
+                    break;
+                case Key.Escape:
+                    txtPhoneNumber.Text = "";
+                    break;
+            }
+        }
+
+        void txtPhoneNumber_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            if (txtPhoneNumber.Text == _PHONE_NUMBER_HELP)
+            {
+                txtPhoneNumber.TextChanged -= new TextChangedEventHandler(txtPhoneNumber_TextChanged);
+                txtPhoneNumber.Text = "";
+                txtPhoneNumber.TextChanged += new TextChangedEventHandler(txtPhoneNumber_TextChanged);
+            }
+        }
+
+        void txtPhoneNumber_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            if (txtPhoneNumber.Text == "")
+            {
+                txtPhoneNumber.Text = _PHONE_NUMBER_HELP;
+            }
+        }
+
+
+        #endregion
 
         public bool isIncoming { get; set; }
 
         public bool isOutcoming { get; set; }
 
-        private void addItemsAdded_MouseDown(object sender, MouseButtonEventArgs e)
-        {
-            if (e.LeftButton == MouseButtonState.Pressed)
-            {
-                var value = ((sender as MenuItem).Header).ToString();
-
-                this.txtPhoneNumber.Text = value;
-            }
-        }
     }
 }
