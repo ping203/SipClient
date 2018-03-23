@@ -1,7 +1,8 @@
 ﻿<Application x:Class="SipClient.App"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             StartupUri="PhoneWindow.xaml">
+             StartupUri="PhoneWindow.xaml"
+             ShutdownMode="OnExplicitShutdown">
     <Application.Resources>
          
     </Application.Resources>

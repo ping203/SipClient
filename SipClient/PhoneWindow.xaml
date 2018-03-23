@@ -149,7 +149,7 @@
                             </Button>                            
                         </StackPanel>
                         <!-- info panel -->
-                        <DataGrid Name="dgvCallList" 
+                        <!--<DataGrid Name="dgvCallList" 
                                   Visibility="Collapsed" 
                                   AutoGenerateColumns="False"
                                   HeadersVisibility="None"
@@ -167,7 +167,7 @@
                                 </DataGridTemplateColumn>
                                 <DataGridTextColumn Binding="{Binding phone}" IsReadOnly="True" />
                             </DataGrid.Columns>
-                        </DataGrid>
+                        </DataGrid>-->
                         <!--Numpad-->
                         <Grid Background="white">
                             <Grid.RowDefinitions>

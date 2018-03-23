@@ -53,7 +53,7 @@ namespace SipClient
 
         public static WcfConnectionService.ServiceClient WcfClient;
 
-        public static Func<string, bool> IsPhoneNumber = (string number) => Regex.Match(number, @"^((\+7|7|8)?([0-9]){4})?([0-9]{3})?([0-9]{3})$").Success;
+        private static Func<string, bool> IsPhoneNumber = (string number) => Regex.Match(number, @"^((\+7|7|8)?([0-9]){4})?([0-9]{3})?([0-9]{3})$").Success;
 
         private Func<string, string> GetCallId = (string sip) => Regex.Match(sip, @"[\\""](\w+)[\\""]").Groups[1].Value;
 
@@ -87,13 +87,13 @@ namespace SipClient
         void Window_Loaded(object sender, RoutedEventArgs e)
         {
             Task.Factory.StartNew(() =>
-            {
-                // SoftPhone initialize
-                InitializeSoftphone();
+                                  {
+                                      // SoftPhone initialize
+                                      InitializeSoftphone();
 
-                // Create Client connection
-                InitializeWcfClient();
-            });
+                                      // Create Client connection
+                                      InitializeWcfClient();
+                                  });
 
             //InvokeGUIThread(() =>
             //{
@@ -104,32 +104,40 @@ namespace SipClient
             //    //AnimationEnd(0.001, this.brdIncomingCall);
             //});
 
-            //Task.Factory.StartNew(() =>
-            //{
-            //   //for (int i = 0; i < 20; i++)
-            //    //{
-            //    //    Thread.Sleep(2000);
+            Task.Factory.StartNew(() =>
+                                  {
+                                      //for (int i = 0; i < 20; i++)
+                                      //{
+                                      //Thread.Sleep(2000);
 
-            //    //    InvokeGUIThread(() =>
-            //    //    {
-            //    //        AnimationBegin(1.0, brdIncomingCall_Height_Prop_Default, brdIncomingCall);
-            //    //    });
+                                      //InvokeGUIThread(() =>
+                                      //{
+                                      //    IncomingCallDialog.GetInstance.ShowDialog();
+                                      //    //AnimationBegin(1.0, brdIncomingCall_Height_Prop_Default, brdIncomingCall);
+                                      //});
 
-            //    //    Thread.Sleep(2000);
+                                      //Thread.Sleep(5000);
 
-            //    //    InvokeGUIThread(() =>
-            //    //    {
-            //    //        SetCallerInfoPanelAttributes("89992221111", "", "");
-            //    //    });
+                                      //InvokeGUIThread(() =>
+                                      //{
+                                      //    IncomingCallDialog.GetInstance.ShowDialog();
+                                      //});
 
-            //    //    Thread.Sleep(2000);
+                                      //    Thread.Sleep(2000);
 
-            //    //    InvokeGUIThread(() =>
-            //    //    {
-            //    //        AnimationEnd(1.0, brdIncomingCall);
-            //    //    });
-            //    //}
-            //});
+                                      //    InvokeGUIThread(() =>
+                                      //    {
+                                      //        SetCallerInfoPanelAttributes("89992221111", "", "");
+                                      //    });
+
+                                      //    Thread.Sleep(2000);
+
+                                      //    InvokeGUIThread(() =>
+                                      //    {
+                                      //        AnimationEnd(1.0, brdIncomingCall);
+                                      //    });
+                                      //}
+                                  });
         }
 
         // Высота формы brdIncomingCall as default
@@ -180,6 +188,8 @@ namespace SipClient
             try
             {
                 account = new Account(Login, Password, Host);
+#warning CallerID didn't set!
+                //account.CallerID = "Hello!";
                 softphone = new Phone(account);
 
                 // Add Events
@@ -195,9 +205,9 @@ namespace SipClient
 
                 // Set Fields
                 InvokeGUIThread(() =>
-                {
-                    miUsername.Header = Login;
-                });
+                                {
+                                    miUsername.Header = Login;
+                                });
 
                 // Check sound devices
                 try
@@ -222,90 +232,91 @@ namespace SipClient
         private void softphone_PhoneDisconnectedEvent()
         {
             InvokeGUIThread(() =>
-            {
-                //set unavailable icon and text message
-                this.StatusIcon.Source = ImageSourceFromBitmap(Properties.Resources.inactive);
-                txtConnectionStatus.Text = "Нет подключения!";
-            });
+                            {
+                                //set unavailable icon and text message
+                                this.StatusIcon.Source = ImageSourceFromBitmap(Properties.Resources.inactive);
+                                txtConnectionStatus.Text = "Нет подключения!";
+                            });
         }
 
         private void softphone_PhoneConnectedEvent()
         {
             InvokeGUIThread(() =>
-            {
-                //set available icon and text message
-                this.PhoneIcon.Source = ImageSourceFromBitmap(Properties.Resources.telephone);
-                this.StatusIcon.Source = ImageSourceFromBitmap(Properties.Resources.active);
-                txtConnectionStatus.Text = "Подключен!";
-            });
+                            {
+                                //set available icon and text message
+                                this.PhoneIcon.Source = ImageSourceFromBitmap(Properties.Resources.telephone);
+                                this.StatusIcon.Source = ImageSourceFromBitmap(Properties.Resources.active);
+                                txtConnectionStatus.Text = "Подключен!";
+                            });
         }
 
         // Звонок завершился
         private void softphone_CallCompletedEvent(Call call)
         {
 #warning НеобходимыПравки!
-            Task.Factory.StartNew(() =>
+            if (isIncoming)
             {
-                if (isIncoming)
+                // write to database
+                try
                 {
-                    // write to database 
-                    try
-                    {
-                        RecordToLocalDataBase.isIncoming = true;
-                        RecordToLocalDataBase.TimeEnd = DateTime.Now;
-                        Classes.SQLiteBase.AddRecordToDataBase(RecordToLocalDataBase);
-                    }
-                    catch (Exception e)
-                    {
-                        MessageBox.Show(e.Message + Environment.NewLine + e.StackTrace);
-                    }
-                    // drop down Incoming call form
-                    InvokeGUIThread(() =>
-                    {
-                        ResetCallerInfoPanelAttributes();
-                        //AnimationEnd(0.5, this.brdIncomingCall);
-                        //remove info panel
-                        //this.brdCallerInfo.Child = null;
-                    });                   
+                    RecordToLocalDataBase.isIncoming = true;
+                    RecordToLocalDataBase.TimeEnd = DateTime.Now;
+                    Classes.SQLiteBase.AddRecordToDataBase(RecordToLocalDataBase);
                 }
-                else if (isOutcoming) // outcoming call
+                catch (Exception e)
                 {
-                    // write to database
-                    try
-                    {
-                        RecordToLocalDataBase.isOutcoming = true;
-                        RecordToLocalDataBase.TimeEnd = DateTime.Now;
-                        Classes.SQLiteBase.AddRecordToDataBase(RecordToLocalDataBase);
-                    }
-                    catch (Exception e)
-                    {
-                        MessageBox.Show(e.Message + Environment.NewLine + e.StackTrace);
-                    }
+                    MessageBox.Show(e.Message + Environment.NewLine + e.StackTrace);
                 }
-                else // rejected or another type
+                // drop down Incoming call form
+                InvokeGUIThread(() =>
+                                {
+                                    ResetCallerInfoPanelAttributes();
+
+                                    // hide incoming call dialog
+                                    if (dialog != null)
+                                        dialog.AnimationEnd();
+                                    //AnimationEnd(0.5, this.brdIncomingCall);
+                                    //remove info panel
+                                    //this.brdCallerInfo.Child = null;
+                                });
+            }
+            else if (isOutcoming) // outcoming call
+            {
+                // write to database
+                try
                 {
-
+                    RecordToLocalDataBase.isOutcoming = true;
+                    RecordToLocalDataBase.TimeEnd = DateTime.Now;
+                    Classes.SQLiteBase.AddRecordToDataBase(RecordToLocalDataBase);
                 }
+                catch (Exception e)
+                {
+                    MessageBox.Show(e.Message + Environment.NewLine + e.StackTrace);
+                }
+            }
+            else // rejected or another type
+            {
 
-                // clear flags
-                isIncoming = false;
-                isOutcoming = false;
-            });
+            }
 
-            this.call = null;
+            // clear flags
+            isIncoming = false;
+            isOutcoming = false;
 
             InvokeGUIThread(() =>
-            {
-                // Update icons and text
-                txtPhoneNumber.Text = _PHONE_NUMBER_HELP;
-                txtCallStatus.Text = "Закончен";
-                this.PhoneIcon.Source = ImageSourceFromBitmap(Properties.Resources.telephone);
+                            {
+                                // Update icons and text
+                                txtPhoneNumber.Text = _PHONE_NUMBER_HELP;
+                                txtCallStatus.Text = "Закончен";
+                                this.PhoneIcon.Source = ImageSourceFromBitmap(Properties.Resources.telephone);
 
-                // Disable Timer clockdown
-                //TimerDisable();
-            });
+                                // Disable Timer clockdown
+                                //TimerDisable();
+                            });
 
             Classes.LocalAudioPlayer.StopSound();
+
+            this.call = null;
         }
 
         // Звонок принят или исходящий
@@ -314,15 +325,22 @@ namespace SipClient
             if (isIncoming)
             {
                 Task.Factory.StartNew(() =>
-              {
-                  // sound notification off
-                  Classes.LocalAudioPlayer.StopSound();
+                                      {
+                                          // sound notification off
+                                          Classes.LocalAudioPlayer.StopSound();
 
-                  // write incoming call to base
-                  RecordToLocalDataBase.Phone = GetPhone(this.call.GetFrom());
-                  RecordToLocalDataBase.TimeStart = DateTime.Now;
-                  RecordToLocalDataBase.isRejected = false;
-              });
+                                          // write incoming call to base
+                                          try
+                                          {
+                                              RecordToLocalDataBase.Phone = GetPhone(this.call.GetFrom());
+                                              RecordToLocalDataBase.TimeStart = DateTime.Now;
+                                              RecordToLocalDataBase.isRejected = false;
+                                          }
+                                          catch (Exception e)
+                                          {
+                                              MessageBox.Show(e.Message + Environment.NewLine + e.StackTrace);
+                                          }
+                                      });
             }
             else
             {
@@ -331,86 +349,111 @@ namespace SipClient
                 isOutcoming = true;
 
                 InvokeGUIThread(() =>
-                {
-                    this.txtCallStatus.Text = "Входящий";
-                    this.PhoneIcon.Source = ImageSourceFromBitmap(Properties.Resources.call_end);
+                                {
+                                    this.txtCallStatus.Text = "Входящий";
+                                    this.PhoneIcon.Source = ImageSourceFromBitmap(Properties.Resources.call_end);
 
-                    // set new call volume
-                    var volValue = this.volumeSlider.Value;
-                    softphone.GetMediaHandler.SetSpeakerSound(this.call, (float)(volValue % 100));
-                });             
+                                    // set new call volume
+#warning SetSpeakerSoundDidntWork
+                                    var volValue = this.volumeSlider.Value;
+                                    softphone.GetMediaHandler.SetSpeakerSound(this.call, (float)(volValue % 100));
+                                });
 
                 Task.Factory.StartNew(() =>
-                {
-                    // Enable timer clockdown
-                    // TimerEnable();  
+                                      {
+                                          //                     Enable timer clockdown
+                                          //                     TimerEnable();
 
-                    // write call start time
-                    RecordToLocalDataBase.Phone = GetPhone(this.call.GetFrom());
-                    RecordToLocalDataBase.isOutcoming = true;
-                    RecordToLocalDataBase.TimeStart = DateTime.Now;
-                });
+                                          // write call start time
+                                          try
+                                          {
+                                              RecordToLocalDataBase.Phone = GetPhone(this.call.GetFrom());
+                                              RecordToLocalDataBase.isOutcoming = true;
+                                              RecordToLocalDataBase.TimeStart = DateTime.Now;
+                                          }
+                                          catch (Exception e)
+                                          {
+                                              MessageBox.Show(e.Message + Environment.NewLine + e.StackTrace);
+                                          }
+                                      });
             }
         }
 
         // Входящий звонок
         private void softphone_IncomingCallEvent(Call incomingCall)
         {
-            // Reject incoming call, if we have active 
+            // Reject incoming call, if we have active
             if (this.call != null)
             {
                 softphone.TerminateCall(incomingCall);
 
                 // write rejected call to base
-                RecordToLocalDataBase.Phone = GetPhone(incomingCall.GetFrom());
-                RecordToLocalDataBase.TimeStart = DateTime.Now;
-                RecordToLocalDataBase.isRejected = true;
+                try
+                {
+                    RecordToLocalDataBase.Phone = GetPhone(incomingCall.GetFrom());
+                    RecordToLocalDataBase.TimeStart = DateTime.Now;
+                    RecordToLocalDataBase.isRejected = true;
+                }
+                catch (Exception e)
+                {
+                    MessageBox.Show(e.Message + Environment.NewLine + e.StackTrace);
+                }
 
                 return;
             };
 
             // set flag
             isIncoming = true;
-
             // Recieve incoming call
             this.call = incomingCall;
 
-            Task.Factory.StartNew(() =>
-            {
-                // write rejected call to base
-                RecordToLocalDataBase.Phone = GetPhone(incomingCall.GetFrom());
-                RecordToLocalDataBase.TimeStart = DateTime.Now;
-                RecordToLocalDataBase.isRejected = true;
-
-                // Play Sound
-                Classes.LocalAudioPlayer.PlaySound(Properties.Resources.signal, true);
-
-                // Get information about caller
-                GetInfoAboutCaller(this.call.GetFrom());
-
-            });
-
             InvokeGUIThread(() =>
-            {
-                // change icon to incoming call
-                this.txtCallStatus.Text = "Входящий";
-                this.PhoneIcon.Source = ImageSourceFromBitmap(Properties.Resources.call_end);
+                            {
+                                // change icon to incoming call
+                                this.txtCallStatus.Text = "Входящий";
+                                this.PhoneIcon.Source = ImageSourceFromBitmap(Properties.Resources.call_end);
 
-                // Do incoming call panel animation
-                //AnimationBegin(0.5, brdIncomingCall_Height_Prop_Default, this.brdIncomingCall);
-            });
+                                // show incoming call dialog
+                                dialog = new IncomingCallDialog();
+                                dialog.Call = this.call;
+                                dialog.SoftPhone = softphone;
+                                // \"OPERATOR10\" <sip:oper-sauri10@192.168.0.5>
+                                dialog.UpdateTextPanel(GetPhone(this.call.GetFrom()), GetCallId(this.call.GetFrom()));
+                                dialog.Show();
+                                // Do incoming call panel animation
+                                //AnimationBegin(0.5, brdIncomingCall_Height_Prop_Default, this.brdIncomingCall);
+                            });
+
+            Task.Factory.StartNew(() =>
+                                  {
+                                      // write rejected call to base
+                                      try
+                                      {
+                                          RecordToLocalDataBase.Phone = GetPhone(incomingCall.GetFrom());
+                                          RecordToLocalDataBase.TimeStart = DateTime.Now;
+                                          RecordToLocalDataBase.isRejected = true;
+                                      }
+                                      catch (Exception e)
+                                      {
+                                          MessageBox.Show(e.Message + Environment.NewLine + e.StackTrace);
+                                      }
+
+                                      // Play Sound
+                                      Classes.LocalAudioPlayer.PlaySound(Properties.Resources.signal, true);
+
+                                      // Get information about caller
+                                      GetInfoAboutCaller(this.call.GetFrom());
+                                  });
         }
 
         /// <summary>
-        /// Get caller info from call.GetInfo() 
+        /// Get caller info from call.GetInfo()
         /// </summary>
         /// <param name="CallGettFrom"></param>
         public void GetInfoAboutCaller(string CallGettFrom)
         {
             bool tryToUseMySQL = false;
             string phone = GetPhone(CallGettFrom);
-            string caller_name = GetCallId(CallGettFrom);
-            string address = String.Empty;
             // use wcf connection
             try
             {
@@ -418,7 +461,12 @@ namespace SipClient
                 {
                     var clientInfo = WcfClient.GetClinetInformation(phone);
 
-                    InvokeGUIThread(() => { SetCallerInfoPanelAttributes(clientInfo.Phone, clientInfo.Name, clientInfo.Address); });
+                    InvokeGUIThread(() =>
+                                    {
+                                        SetCallerInfoPanelAttributes(clientInfo.Phone, clientInfo.Name, clientInfo.Address);
+                                        if (dialog != null)
+                                            dialog.UpdateTextPanel(clientInfo.Phone, clientInfo.Name);
+                                    });
                 }
             }
             catch (Exception e)
@@ -432,21 +480,35 @@ namespace SipClient
             if (tryToUseMySQL && this.call != null)
             {
                 var tabCallerInfo = Classes.MainDataBase.GetDataTable(
-                            string.Format(
-                            @"select hat.order_id,hat.customer,hat.customer_name,addr.address_text
+                    string.Format(
+                        @"select hat.order_id,hat.customer,hat.customer_name as name,addr.address_text
                         from orders_hat hat left join customers_addresses addr on hat.order_id=addr.order_id
                         where hat.customer = '{0}' order by date_sm desc limit 1;", phone));
                 // Set new values to caller_name , address
                 if (tabCallerInfo != null && tabCallerInfo.Rows.Count > 0)
                 {
-                    caller_name = Convert.ToString(tabCallerInfo.Rows[0]["name"]);
-                    address = Convert.ToString(tabCallerInfo.Rows[0]["address_text"]);
+                    string caller_name = Convert.ToString(tabCallerInfo.Rows[0]["name"]);
+                    if (caller_name == "")
+                        caller_name = GetCallId(CallGettFrom);
 
-                    InvokeGUIThread(() => { SetCallerInfoPanelAttributes(phone, caller_name, address); });
+                    string address = Convert.ToString(tabCallerInfo.Rows[0]["address_text"]);
+
+                    InvokeGUIThread(() =>
+                                    {
+                                        SetCallerInfoPanelAttributes(phone, caller_name, address);
+                                        if (dialog != null)
+                                            dialog.UpdateTextPanel(phone, caller_name);
+                                    });
                 }
                 else
                 {
-                    InvokeGUIThread(() => { SetCallerInfoPanelAttributes(phone, Name, address); });
+                    InvokeGUIThread(() =>
+                                    {
+                                        string callId = GetCallId(CallGettFrom);
+                                        SetCallerInfoPanelAttributes(phone, callId, "");
+                                        if (dialog != null)
+                                            dialog.UpdateTextPanel(phone, callId);
+                                    });
                 }
             }
         }
@@ -495,15 +557,15 @@ namespace SipClient
             {
                 case Phone.Error.CallError:
                     InvokeGUIThread(() =>
-                    {
-                        txtCallStatus.Text = "Ошибка вызова!";
-                    });
+                                    {
+                                        txtCallStatus.Text = "Ошибка вызова!";
+                                    });
                     break;
                 case Phone.Error.LineIsBusyError:
                     InvokeGUIThread(() =>
-                    {
-                        txtCallStatus.Text = "Линия занята!";
-                    });
+                                    {
+                                        txtCallStatus.Text = "Линия занята!";
+                                    });
                     break;
                 case Phone.Error.OrderError:
                     {
@@ -513,19 +575,19 @@ namespace SipClient
                 case Phone.Error.RegisterFailed:
                     {
                         InvokeGUIThread(() =>
-                        {
-                            //set unavailable icon and text message
-                            this.StatusIcon.Source = ImageSourceFromBitmap(Properties.Resources.inactive);
-                            txtConnectionStatus.Text = "Нет подключения!";
-                        });
+                                        {
+                                            //set unavailable icon and text message
+                                            this.StatusIcon.Source = ImageSourceFromBitmap(Properties.Resources.inactive);
+                                            txtConnectionStatus.Text = "Нет подключения!";
+                                        });
                     }
                     break;
                 case Phone.Error.UnknownError:
                     {
                         InvokeGUIThread(() =>
-                        {
-                            txtCallStatus.Text = "Неизвестная ошибка!";
-                        });
+                                        {
+                                            txtCallStatus.Text = "Неизвестная ошибка!";
+                                        });
                     }
                     break;
             }
@@ -591,7 +653,7 @@ namespace SipClient
             if (String.IsNullOrEmpty(phoneNumber))
                 return;
 
-            // Check phone number 
+            // Check phone number
             if (!IsPhoneNumber(phoneNumber))
             {
                 MessageBox.Show(string.Concat("Неправильный телефонный номер : '", phoneNumber, "'!"));
@@ -606,8 +668,25 @@ namespace SipClient
                 MessageBox.Show(e.Message);
             }
 
-            // make a call to number
             softphone.MakeCall(phoneNumber);
+
+
+            //if (!String.IsNullOrEmpty(Login))
+            //{
+            //    // make call with sip:uri
+            //    // sip:user:password@host:port;uri-parameter?headers
+            //    //softphone.Useragent = "test";
+            //     softphone.MakeCall("227");
+
+            //    //softphone.MakeCall("sip:test:testpass@192.168.0.5:5060;<transport>=<UDP>;<>=<>");
+
+            //    //softphone.MakeCall(string.Format("sip:{0}:{1}@{2};<user>=<{3}>",Login,Password, Host, phoneNumber));
+            //}
+            //else
+            //{
+            //    // make a call to number
+            //    softphone.MakeCall(phoneNumber);
+            //}
         }
 
         // изменение ползунка с громкостью
@@ -616,13 +695,14 @@ namespace SipClient
             // change graphics
             var volValue = this.volumeSlider.Value;
             InvokeGUIThread(() =>
-            {
-                this.volumeSlider.SelectionEnd = volValue;
-            });
+                            {
+                                this.volumeSlider.SelectionEnd = volValue;
+                            });
 
             // set new volume
             if (this.call != null)
             {
+#warning SetSoundDidntWork!
                 softphone.GetMediaHandler.SetSpeakerSound(this.call, (float)(volValue / 100));
             }
         }
@@ -650,7 +730,7 @@ namespace SipClient
         //        case Key.NumPad1:
         //        case Key.D1:
         //            {
-        //                //put number     
+        //                //put number
         //                buttonKeyPadButton_Click(new Button() { Content = 1 }, e);
         //                //PutNumberWithDTMF("1");
         //            }
@@ -658,7 +738,7 @@ namespace SipClient
         //        case Key.NumPad2:
         //        case Key.D2:
         //            {
-        //                //put number                
+        //                //put number
         //                buttonKeyPadButton_Click(new Button() { Content = 2 }, e);
         //                //PutNumberWithDTMF("2");
         //            }
@@ -666,7 +746,7 @@ namespace SipClient
         //        case Key.NumPad3:
         //        case Key.D3:
         //            {
-        //                //put number      
+        //                //put number
         //                buttonKeyPadButton_Click(new Button() { Content = 3 }, e);
         //                //PutNumberWithDTMF("3");
         //            }
@@ -674,7 +754,7 @@ namespace SipClient
         //        case Key.NumPad4:
         //        case Key.D4:
         //            {
-        //                //put number 
+        //                //put number
         //                buttonKeyPadButton_Click(new Button() { Content = 4 }, e);
         //                //PutNumberWithDTMF("4");
         //            }
@@ -682,7 +762,7 @@ namespace SipClient
         //        case Key.NumPad5:
         //        case Key.D5:
         //            {
-        //                //put number     
+        //                //put number
         //                buttonKeyPadButton_Click(new Button() { Content = 5 }, e);
         //                //PutNumberWithDTMF("5");
         //            }
@@ -698,7 +778,7 @@ namespace SipClient
         //        case Key.NumPad7:
         //        case Key.D7:
         //            {
-        //                //put number           
+        //                //put number
         //                buttonKeyPadButton_Click(new Button() { Content = 7 }, e);
         //                //PutNumberWithDTMF("7");
         //            }
@@ -706,7 +786,7 @@ namespace SipClient
         //        case Key.NumPad8:
         //        case Key.D8:
         //            {
-        //                //put number     
+        //                //put number
         //                buttonKeyPadButton_Click(new Button() { Content = 8 }, e);
         //                //PutNumberWithDTMF("8");
         //            }
@@ -714,7 +794,7 @@ namespace SipClient
         //        case Key.NumPad9:
         //        case Key.D9:
         //            {
-        //                //put number      
+        //                //put number
         //                buttonKeyPadButton_Click(new Button() { Content = 9 }, e);
         //                //PutNumberWithDTMF("9");
         //            }
@@ -776,18 +856,18 @@ namespace SipClient
             softphone.MakeTransfer(this.call, transferNumber);
 
             InvokeGUIThread(() =>
-            {
-                txtCallStatus.Text = "Трансфер на :" + transferNumber;
-            });
+                            {
+                                txtCallStatus.Text = "Трансфер на :" + transferNumber;
+                            });
         }
 
         public static ImageSource ImageSourceFromBitmap(Bitmap bitmap)
         {
             return Imaging.CreateBitmapSourceFromHBitmap(
-                    bitmap.GetHbitmap(),
-                    IntPtr.Zero,
-                    Int32Rect.Empty,
-                    BitmapSizeOptions.FromEmptyOptions());
+                bitmap.GetHbitmap(),
+                IntPtr.Zero,
+                Int32Rect.Empty,
+                BitmapSizeOptions.FromEmptyOptions());
         }
 
         private void buttonKeyPadButton_Click(object sender, RoutedEventArgs e)
@@ -801,10 +881,10 @@ namespace SipClient
             if (transferFlag)
             {
                 InvokeGUIThread(() =>
-                {
-                    txtCallStatus.Text = "Трансфер на..";
-                    this.PhoneIcon.Source = ImageSourceFromBitmap(Properties.Resources.telephone);
-                });
+                                {
+                                    txtCallStatus.Text = "Трансфер на..";
+                                    this.PhoneIcon.Source = ImageSourceFromBitmap(Properties.Resources.telephone);
+                                });
             }
 
             if (call != null && !transferFlag)
@@ -821,9 +901,9 @@ namespace SipClient
         {
 
             InvokeGUIThread(() =>
-            {
-                this.btnAdditionalIcon.Source = PhoneWindow.ImageSourceFromBitmap(Properties.Resources.close);
-            });
+                            {
+                                this.btnAdditionalIcon.Source = PhoneWindow.ImageSourceFromBitmap(Properties.Resources.close);
+                            });
 
 
             //if (this.txtPhoneNumber.Text == _PHONE_NUMBER_HELP || this.txtPhoneNumber.Text == string.Empty)
@@ -885,19 +965,19 @@ namespace SipClient
             if (!SpeakerOff)
             {
                 InvokeGUIThread(() =>
-                {
-                    this.SpeakerIcon.Source = ImageSourceFromBitmap(Properties.Resources.speaker_on_64x64);
-                    this.volumeSlider.Value = volumeSliderValue;
-                });
+                                {
+                                    this.SpeakerIcon.Source = ImageSourceFromBitmap(Properties.Resources.speaker_on_64x64);
+                                    this.volumeSlider.Value = volumeSliderValue;
+                                });
             }
             else
             {
                 InvokeGUIThread(() =>
-                {
-                    volumeSliderValue = this.volumeSlider.Value;
-                    this.SpeakerIcon.Source = ImageSourceFromBitmap(Properties.Resources.speaker_off_64x64);
-                    this.volumeSlider.Value = 0;
-                });
+                                {
+                                    volumeSliderValue = this.volumeSlider.Value;
+                                    this.SpeakerIcon.Source = ImageSourceFromBitmap(Properties.Resources.speaker_off_64x64);
+                                    this.volumeSlider.Value = 0;
+                                });
             }
 
             if (!MicrophoneOff)
@@ -956,6 +1036,7 @@ namespace SipClient
 
         private DispatcherTimer timer;
         private TimeSpan timeSpan;
+        private IncomingCallDialog dialog;
 
         private void AnimationTimerGrow()
         {
@@ -987,13 +1068,13 @@ namespace SipClient
             timeSpan = new TimeSpan();
             timer.Interval = new TimeSpan(0, 0, 0, 0, 0010);
             timer.Tick += ((sender, e) =>
-            {
-                InvokeGUIThread(() =>
-                {
-                    timeSpan += timer.Interval;
-                    //lblTime.Content = timeSpan.ToString(@"mm\:ss");
-                });
-            });
+                           {
+                               InvokeGUIThread(() =>
+                                               {
+                                                   timeSpan += timer.Interval;
+                                                   //lblTime.Content = timeSpan.ToString(@"mm\:ss");
+                                               });
+                           });
             timer.Start();
         }
 
@@ -1032,10 +1113,10 @@ namespace SipClient
             if (settings.ShowDialog() == true)
             {
                 Task.Factory.StartNew(() =>
-                {
-                    SettingsWindow.LoadSettings(SettingsWindow.PathToConfigs);
-                    InitializeSoftphone(); ;
-                });
+                                      {
+                                          SettingsWindow.LoadSettings(SettingsWindow.PathToConfigs);
+                                          InitializeSoftphone(); ;
+                                      });
             }
         }
 
@@ -1064,7 +1145,7 @@ namespace SipClient
 
         private void btnReject_Click(object sender, RoutedEventArgs e)
         {
-            // отклоняем звонок 
+            // отклоняем звонок
             if (this.call != null)
             {
                 softphone.TerminateCall(this.call);
@@ -1097,12 +1178,14 @@ namespace SipClient
 
             //            if (txtPhoneNumber.Text == _PHONE_NUMBER_HELP || txtPhoneNumber.Text == "")
             //            {
-            //                var list = UserStat.GetInstance.GetLastPhoneNumbers;
+            //                var list = UserStat.GetInstance.GetLastPhoneNumbersWithIcon;
             //                // выводим список
             //                if (list != null && list.Count > 0)
             //                {
             //#warning WatchLastCalls
-
+            //                    var source = UserStat.GetInstance.GetLastPhoneNumbersWithIcon;
+            //                    dgvCallList.ItemsSource = source;
+            //                    dgvCallList.Visibility = System.Windows.Visibility.Visible;
             //                }
             //            }
             //            else

@@ -1,0 +1,45 @@
+﻿<Window x:Class="SipClient.IncomingCallDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        WindowStyle="None" AllowsTransparency="True" 
+        BorderBrush="#4a71ef" BorderThickness="1.5"
+        Background="#f4f4f4"
+        WindowStartupLocation="Manual"
+        SizeToContent="WidthAndHeight"
+        ResizeMode="NoResize"
+        Loaded="Window_Loaded"
+        MouseDown="Window_MouseDown"
+        Topmost="True"
+        ShowInTaskbar="False">
+    <Grid>
+        <StackPanel Orientation="Vertical">
+            <Border BorderBrush="#777777" BorderThickness="1" Background="#5ee170">
+                <DockPanel Height="25">
+                    <Label Margin="5,0,0,0" Content="Входящий" FontSize="15" Padding="0,-2,0,0"/>
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                        <Button Background="Red" Width="32" Style="{StaticResource {x:Static ToolBar.ButtonStyleKey}}" Click="btnClose">
+                            <Image Source="/SipClient;component/Resources/Images/close.png"/>
+                        </Button>
+                    </StackPanel>
+                </DockPanel>
+            </Border>
+
+            <StackPanel Orientation="Horizontal" Height="70" Margin="5">
+                <Image Width="80" Source="{Binding}" Margin="10,0" Name="imgProfile"/>
+                <StackPanel Orientation="Vertical" Width="200">
+                    <Label Name="lblPhone" FontSize="18" Content="Телефон"/>
+                    <Label Name="lblName" FontSize="18" Content="Имя"/>
+                </StackPanel>
+            </StackPanel>
+            
+            <DockPanel Height="45">
+                <Button DockPanel.Dock="Left" Width="160" Background="Lime" BorderBrush="Black" Style="{StaticResource {x:Static ToolBar.ButtonStyleKey}}" Click="btnAppend" >
+                    <Image Source="/SipClient;component/Resources/Images/telephone.png"/>
+                </Button>
+                <Button DockPanel.Dock="Right" Width="160" Background="Red" BorderBrush="Black" Style="{StaticResource {x:Static ToolBar.ButtonStyleKey}}" Click="btnClose">
+                    <Image Source="/SipClient;component/Resources/Images/call-end.png"/>
+                </Button>
+            </DockPanel >
+        </StackPanel>
+    </Grid>
+</Window>

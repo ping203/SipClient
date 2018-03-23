@@ -71,7 +71,7 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\dev\MySql.Data.dll</HintPath>
     </Reference>
-    <Reference Include="sipdotnet, Version=0.0.0.0, Culture=neutral, processorArchitecture=AMD64">
+    <Reference Include="sipdotnet, Version=0.0.0.0, Culture=neutral, PublicKeyToken=b6db3b8c171547a0, processorArchitecture=x86">
       <HintPath>..\..\sipdotnet\bin\x86\Debug\sipdotnet.dll</HintPath>
     </Reference>
     <Reference Include="System" />
@@ -108,6 +108,9 @@
     <Compile Include="Classes\MainDataBase.cs" />
     <Compile Include="Classes\SQLiteBase.cs" />
     <Compile Include="Classes\LocalAudioPlayer.cs" />
+    <Compile Include="IncomingCallDialog.xaml.cs">
+      <DependentUpon>IncomingCallDialog.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Properties\Resources.Designer.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
@@ -116,6 +119,10 @@
     <Compile Include="UserStat.xaml.cs">
       <DependentUpon>UserStat.xaml</DependentUpon>
     </Compile>
+    <Page Include="IncomingCallDialog.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="SettingsWindow.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
@@ -144,6 +151,7 @@
     <Content Include="Properties\AssemblyInfo.cs">
       <SubType>Code</SubType>
     </Content>
+    <None Include="Resources\profile.png" />
     <Content Include="Resources\Sounds\notification_call_ended.wav" />
     <Content Include="Resources\Sounds\notification_delayed.wav" />
     <Content Include="Resources\Sounds\notification_incoming.wav" />

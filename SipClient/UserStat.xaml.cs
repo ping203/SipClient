@@ -47,38 +47,64 @@ namespace SipClient
         public void ReloadTable()
         {
             DataTable tab = Classes.SQLiteBase.GetDataTable("select * from calls");
-            ProcessTable(tab);
+
+            this.dgvCalls.ItemsSource = ProcessTable(tab);
         }
 
-        public List<string> GetLastPhoneNumbers
+        public List<LastPhones> GetLastPhoneNumbersWithIcon
         {
             get
             {
-                List<string> answer = null;
+                List<LastPhones> answer = null;
                 var dt = new DataTable();
                 try
                 {
-                    dt = Classes.SQLiteBase.GetDataTable(@"select distinct(Phone) from calls where Phone != '' order by TimeStart;");
+                    dt = Classes.SQLiteBase.GetDataTable(@"select distinct(Phone),isIncoming,isOutcoming,isRejected
+                                                                from calls where Phone != '' order by TimeStart;");
                 }
                 catch (Exception)
                 {
                 }
                 if (dt != null && dt.Rows.Count > 0)
                 {
-                    answer = dt.AsEnumerable().Select(row => row[0].ToString()).ToList();
+                    answer = (from row in dt.AsEnumerable()
+                              select new LastPhones()
+                              {
+                                  phone = row["Phone"].ToString(),
+                                  bitmap = (Convert.ToInt32(row["isIncoming"]) == 1) ? Properties.Resources.inc_call
+                                            : (Convert.ToInt32(row["isOutcoming"]) == 1) ? Properties.Resources.out_call
+                                            : (Convert.ToInt32(row["isRejected"]) == 1) ? Properties.Resources.rej_call
+                                            : Properties.Resources.close
+                              }).ToList();
                 }
                 return answer;
             }
         }
 
-        private void ProcessTable(DataTable tab)
+        public class LastPhones
         {
-            if (tab == null)
+            public string phone { get; set; }
+            public Bitmap bitmap { get; set; }
+
+            public ImageSource img
             {
-                // Load empty table
-                MessageBox.Show("Can't load calls.db");
-                this.Hide();
-                return;
+                get
+                {
+                    return Imaging.CreateBitmapSourceFromHBitmap(
+                        bitmap.GetHbitmap(),
+                        IntPtr.Zero,
+                        Int32Rect.Empty,
+                        BitmapSizeOptions.FromEmptyOptions());
+                }
+            }
+        }
+
+
+        private List<DisplayedCell> ProcessTable(DataTable tab)
+        {
+            if (tab == null || tab.Rows.Count == 0)
+            {
+                return new List<DisplayedCell>();
             }
 
             // Create special functions
@@ -104,7 +130,7 @@ namespace SipClient
                               callEnd = getCallTime(row, "TimeEnd"),
                           }).OrderBy(elem => elem.id).ToList();
 
-            this.dgvCalls.ItemsSource = source;
+            return source;
         }
 
         private void Window_MouseDown(object sender, MouseButtonEventArgs e)
@@ -142,7 +168,7 @@ namespace SipClient
         }
 
         // inherieted class, define cell of DataGrid
-        private class DisplayedCell
+        class DisplayedCell
         {
             public int id { get; set; }
             public string phone { get; set; }
