@@ -25,5 +25,11 @@ namespace SipClient
             // Prevent default unhandled exception processing
             e.Handled = true;
         }
+
+         private void Application_Startup(object sender, StartupEventArgs e)
+         {
+             View.MainWindow window = new View.MainWindow();
+             window.Show();
+         }
     }
 }

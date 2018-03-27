@@ -10,38 +10,35 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
-using System.Data;
-using System.Threading.Tasks;
-using System.Diagnostics;
-using System.Drawing;
+using MahApps.Metro.Controls;
 using System.Windows.Interop;
+using System.Drawing;
+using System.Data;
 
-namespace SipClient
+namespace SipClient.View
 {
     /// <summary>
-    /// Interaction logic for UserStat.xaml
+    /// Interaction logic for CallList.xaml
     /// </summary>
-    public partial class UserStat : Window
+    public partial class CallList : MetroWindow
     {
-        private static UserStat instance;
+        private static CallList instance;
 
-        public static UserStat GetInstance
+        public static CallList GetInstance
         {
             get
             {
                 if (instance == null)
                 {
-                    instance = new UserStat();
+                    instance = new CallList();
                 }
                 return instance;
             }
         }
 
-        private UserStat()
+        private CallList()
         {
             InitializeComponent();
-
-            this.Icon = PhoneWindow.ImageSourceFromBitmap(Properties.Resources.icon.ToBitmap());
         }
 
         public void ReloadTable()
@@ -99,7 +96,6 @@ namespace SipClient
             }
         }
 
-
         private List<DisplayedCell> ProcessTable(DataTable tab)
         {
             if (tab == null || tab.Rows.Count == 0)
@@ -133,17 +129,6 @@ namespace SipClient
             return source;
         }
 
-        private void Window_MouseDown(object sender, MouseButtonEventArgs e)
-        {
-            if (Mouse.LeftButton == MouseButtonState.Pressed)
-                this.DragMove();
-        }
-
-        private void btnMinimizeClick(object sender, RoutedEventArgs e)
-        {
-            this.WindowState = System.Windows.WindowState.Minimized;
-        }
-
         private void btnCloseClick(object sender, RoutedEventArgs e)
         {
             this.Hide();
@@ -155,16 +140,6 @@ namespace SipClient
             {
                 MessageBox.Show("left presed!");
             }
-        }
-
-        private void Item_MouseEnter(object sender, MouseEventArgs e)
-        {
-            (sender as Control).Background = System.Windows.Media.Brushes.WhiteSmoke;
-        }
-
-        private void Item_MouseLeave(object sender, MouseEventArgs e)
-        {
-            (sender as Control).Background = null;
         }
 
         // inherieted class, define cell of DataGrid

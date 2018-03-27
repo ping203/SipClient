@@ -1,0 +1,95 @@
+﻿<Controls:MetroWindow x:Class="SipClient.View.Settings"
+                      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                      xmlns:Controls="http://metro.mahapps.com/winfx/xaml/controls"
+                      Title="Настройки"
+                      Height="225" 
+                      Width="471"
+                      Loaded="MetroWindow_Loaded">
+    <StackPanel Orientation="Vertical">
+        <TabControl TabStripPlacement="Left" FontSize="13">
+            <TabItem Header="Соединение">
+                <TabItem.Content>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition MinWidth="20" Width="Auto" />
+                            <ColumnDefinition/>
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition/>
+                            <RowDefinition/>
+                            <RowDefinition/>
+                            <RowDefinition/>
+                            <RowDefinition/>
+                        </Grid.RowDefinitions>
+                        <Label Grid.Column="0" Grid.Row="0" Content="Имя аккаунта"/>
+                        <Label Grid.Column="0" Grid.Row="1" Content="Хост адрес"/>
+                        <Label Grid.Column="0" Grid.Row="2" Content="Порт"/>
+                        <Label Grid.Column="0" Grid.Row="3" Content="Логин"/>
+                        <Label Grid.Column="0" Grid.Row="5" Content="Пароль"/>
+                        <TextBox Grid.Column="1"
+                                 Grid.Row="0"
+                                 x:Name="txtAccountName"
+                                 Controls:TextBoxHelper.Watermark="Введите имя аккаунта"/>
+                        <TextBox Grid.Column="1"
+                                  Grid.Row="1"
+                                 x:Name="txtHostAddress"
+                                 Controls:TextBoxHelper.Watermark="Введите хост адрес"/>
+                        <TextBox Grid.Column="1"
+                                 Grid.Row="2"
+                                 x:Name="txtPort"
+                                 Controls:TextBoxHelper.Watermark="Введите номер порта"/>
+                        <TextBox Grid.Column="1"
+                                 Grid.Row="3"
+                                 x:Name="txtLogin"
+                                 Controls:TextBoxHelper.Watermark="Введите логин подключения"/>
+                        <PasswordBox Grid.Column="1"
+                                 Grid.Row="4"
+                                 x:Name="txtPassword"
+                                 Controls:TextBoxHelper.Watermark="Введите пароль подключения"/>
+                    </Grid>
+                </TabItem.Content>
+            </TabItem>
+            <TabItem Header="Устройства">
+                <TabItem.Content>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition MinWidth="20" Width="Auto"/>
+                            <ColumnDefinition/>
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition/>
+                            <RowDefinition/>
+                            <RowDefinition/>
+                        </Grid.RowDefinitions>
+                        <Label Grid.Column="0" Grid.Row="0" Content="Устройства&#10;воспроизведения"/>
+                        <Label Grid.Column="0" Grid.Row="1" Content="Устройства&#10;записи"/>
+
+                        <Controls:SplitButton Grid.Column="1"
+                                              Grid.Row="0"
+                                              Margin="0,5,0,5"
+                                              Name="spltPlaybackDevices"
+                                              VerticalContentAlignment="Center"
+                                              HorizontalContentAlignment="Left"/>
+                        <Controls:SplitButton Grid.Column="1" 
+                                              Grid.Row="1"
+                                              Margin="0,5,0,5"
+                                              Name="spltRecordDevices"
+                                              VerticalContentAlignment="Center"
+                                              HorizontalContentAlignment="Left"/>
+
+                        <Controls:ToggleSwitch Grid.Row="2"
+                                               Grid.Column="0"
+                                               Name="tswEchoCancellation"
+                                               IsChecked="False"
+                                               Header="Удаление эха"/>
+                    </Grid>
+                </TabItem.Content>
+            </TabItem>
+        </TabControl>
+        <StackPanel Orientation="Horizontal" MinHeight="35" HorizontalAlignment="Right">
+            <Button Name="btnOK" Content="OK" MinWidth="60" Margin="5" Click="btnAppend_Click"></Button>
+            <Button Name="btnClose" Content="Закрыть" MinWidth="60" Margin="5" Click="btnCloseClick"></Button>
+        </StackPanel>
+    </StackPanel>
+</Controls:MetroWindow>
