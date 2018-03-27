@@ -19,11 +19,11 @@ namespace SipClient.View
         public static bool isEchoOff { get; private set; }
         public static string PathToConfigs = string.Concat(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), Properties.Resources.SettingsFileName);
 
-        private static string account = String.Empty;
-        private static string port = String.Empty;
-        private static string password = String.Empty;
-        private static string login = String.Empty;
-        private static string host = String.Empty;
+        public static string Account { get; private set; }
+        public static int Port { get; private set; }
+        public static string Password { get; private set; }
+        public static string Login { get; private set; }
+        public static string Host { get; private set; }
 
         private Func<string, bool> isMicrophone = (device) => Regex.Match(device, "(Микрофон)").Success;
         private Func<string, bool> isSpeaker = (device) => Regex.Match(device, "(Динамики)").Success;
@@ -64,7 +64,7 @@ namespace SipClient.View
                     xDoc.Load(fs);
                 }
 
-                xDoc.DocumentElement["Connection"].Attributes.GetNamedItem("Account").Value = account;
+                xDoc.DocumentElement["Connection"].Attributes.GetNamedItem("Account").Value = Account;
                 xDoc.DocumentElement["Connection"].Attributes.GetNamedItem("Ip").Value = host;
                 xDoc.DocumentElement["Connection"].Attributes.GetNamedItem("Port").Value = port;
                 xDoc.DocumentElement["Connection"].Attributes.GetNamedItem("Login").Value = login;
@@ -90,17 +90,13 @@ namespace SipClient.View
                     xml_settings.Load(fs);
 
                     var xRoot = xml_settings.DocumentElement;
-                    account = Convert.ToString(xRoot["Connection"].Attributes.GetNamedItem("Account").Value);
-                    host = Convert.ToString(xRoot["Connection"].Attributes.GetNamedItem("Ip").Value);
-                    port = Convert.ToString(xRoot["Connection"].Attributes.GetNamedItem("Port").Value);
-                    login = Convert.ToString(xRoot["Connection"].Attributes.GetNamedItem("Login").Value);
-                    password = Convert.ToString(xRoot["Connection"].Attributes.GetNamedItem("Password").Value);
+                    Account = Convert.ToString(xRoot["Connection"].Attributes.GetNamedItem("Account").Value);
+                    Host = Convert.ToString(xRoot["Connection"].Attributes.GetNamedItem("Ip").Value);
+                    Port = Convert.ToInt32(xRoot["Connection"].Attributes.GetNamedItem("Port").Value);
+                    Login = Convert.ToString(xRoot["Connection"].Attributes.GetNamedItem("Login").Value);
+                    Password = Convert.ToString(xRoot["Connection"].Attributes.GetNamedItem("Password").Value);
 
                     isEchoOff = Convert.ToBoolean(xRoot["EchoCancellation"].Attributes.GetNamedItem("Value").Value);
-
-                    SipClient.View.MainWindow.Host = host;
-                    SipClient.View.MainWindow.Login = login;
-                    SipClient.View.MainWindow.Password = password;
                 }
             }
             catch (Exception ex)
@@ -119,10 +115,13 @@ namespace SipClient.View
             // Load xml settings
             LoadSettings(PathToConfigs);
 
-            this.txtHostAddress.Text = host;
-            this.txtLogin.Text = login;
-            this.txtPassword.Password = password;
-            this.txtPort.Text = port;
+            this.txtHostAddress.Text = Host;
+            this.txtLogin.Text = Login;
+            this.txtPassword.Password = Password;
+            this.txtPort.Text = Port.ToString();
+            this.txtAccountName.Text = Account;
+
+            this.tswEchoCancellation.IsChecked = isEchoOff;
 
             // Load device list
             List<string> playbackDevices = new List<string>();

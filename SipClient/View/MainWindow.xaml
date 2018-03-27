@@ -9,9 +9,12 @@
                       Closing="MetroWindow_Closing"
                       ShowMaxRestoreButton="False"
                       SizeToContent="WidthAndHeight"
-                      ResizeMode="NoResize"
+                      ResizeMode="CanMinimize"
                       GlowBrush="{DynamicResource AccentColorBrush}">
-    <Controls:MetroWindow.RightWindowCommands>
+    <Controls:MetroWindow.Resources>
+        <Image x:Key="appbar_proflie" Source="pack://application:,,,/Resources/Images/profile.png"/>
+    </Controls:MetroWindow.Resources>
+    <Controls:MetroWindow.LeftWindowCommands>
         <Controls:WindowCommands>
             <Button Content="Настройки" Click="btnSettings_Click"/>
             <Button Click="btnShowStatus_Click">
@@ -20,18 +23,18 @@
                                Height="20"
                                Fill="{Binding RelativeSource={RelativeSource AncestorType=Button}, Path=Foreground}">
                         <Rectangle.OpacityMask>
-                            <VisualBrush Stretch="Fill" Visual="{x:Null}"/>
+                            <VisualBrush Stretch="Fill" Visual="{StaticResource appbar_proflie}"/>
                             <!--<VisualBrush Stretch="Fill" Visual="{StaticResource appbar_cupcake}"/>-->
                         </Rectangle.OpacityMask>
                     </Rectangle>
-                    <TextBlock Name="txtLogin"
+                    <TextBlock Name="txtAccount"
                                Margin="4, 0, 0, 0"
                                VerticalAlignment="Center"
                                Text=""/>
                 </StackPanel>
             </Button>
         </Controls:WindowCommands>
-    </Controls:MetroWindow.RightWindowCommands>
+    </Controls:MetroWindow.LeftWindowCommands>
     <StackPanel x:Name="spConfigs">
         <!--StatusPanel-->
         <Border Margin="2">

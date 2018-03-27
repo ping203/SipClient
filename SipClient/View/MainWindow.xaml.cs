@@ -24,10 +24,6 @@ namespace SipClient.View
         private Account account;
         private Call call;
 
-        public static string Login { get; set; }
-        public static string Host { get; set; }
-        public static string Password { get; set; }
-
         public int ProcessID { get; set; }
 
         public static WcfConnectionService.ServiceClient WcfClient;
@@ -144,7 +140,7 @@ namespace SipClient.View
         {
             try
             {
-                account = new Account(Login, Password, Host);
+                account = new Account(Settings.Login, Settings.Password, Settings.Host, Settings.Port);
                 //account.CallerID = "Hello!";
                 Softphone = new Phone(account);
 
@@ -162,7 +158,7 @@ namespace SipClient.View
                 // Set Fields
                 InvokeGUIThread(() =>
                                 {
-                                    txtLogin.Text = Login;
+                                    this.txtAccount.Text = (Settings.Account != "") ? Settings.Account : Settings.Login;
                                 });
             }
             catch (Exception ex)
@@ -198,7 +194,6 @@ namespace SipClient.View
         // Звонок завершился
         private void softphone_CallCompletedEvent(Call call)
         {
-#warning НеобходимыПравки!
             if (isIncoming)
             {
                 // write to database
@@ -306,7 +301,7 @@ namespace SipClient.View
                                     //softphone.GetMediaHandler.SetSpeakerSound(this.call, (float)(volValue % 100));
                                 });
 
-                RecordToLocalDataBase.Phone = GetPhone(this.call.GetFrom());
+                RecordToLocalDataBase.Phone = GetPhone(this.call.GetTo());
                 RecordToLocalDataBase.isOutcoming = true;
                 RecordToLocalDataBase.TimeStart = DateTime.Now;
             }
@@ -339,7 +334,6 @@ namespace SipClient.View
             isIncoming = true;
             // Recieve incoming call
             this.call = incomingCall;
-
 
             Task.Factory.StartNew(() =>
                                   {
@@ -1150,9 +1144,12 @@ namespace SipClient.View
 
         private void btnShowStatus_Click(object sender, RoutedEventArgs e)
         {
-            View.CallList userStat = View.CallList.GetInstance;
-            userStat.ReloadTable();
-            userStat.Show();
+            InvokeGUIThread(() =>
+            {
+                View.CallList userStat = View.CallList.GetInstance;
+                userStat.ReloadTable();
+                userStat.Show();
+            });
         }
     }
 }
