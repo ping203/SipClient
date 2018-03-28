@@ -12,13 +12,16 @@ using System.Diagnostics;
 using sipdotnet;
 using System.Drawing;
 using System.Windows.Interop;
+using System.ComponentModel;
+using System.Collections.ObjectModel;
+using System.Collections;
 
 namespace SipClient.View
 {
     /// <summary>
     /// Interaction logic for MainWindow.xaml
     /// </summary>
-    public partial class MainWindow : MetroWindow
+    public partial class MainWindow : MetroWindow, INotifyPropertyChanged
     {
         public static Phone Softphone { get; private set; }
         private Account account;
@@ -87,6 +90,8 @@ namespace SipClient.View
         {
             // Initialize all controls
             InitializeComponent();
+
+            this.DataContext = this;
 
             //Load configs
             View.Settings.LoadSettings(View.Settings.PathToConfigs);
@@ -288,7 +293,15 @@ namespace SipClient.View
                 isOutcoming = true;
 
                 // Disable echo
-                Softphone.GetMediaHandler.EchoCancellation(this.call, Settings.isEchoOff);
+                try
+                {
+                    Softphone.GetMediaHandler.EchoCancellation(this.call, Settings.isEchoOff);
+                }
+                catch (Exception exc)
+                {
+                    Debug.WriteLine(exc.Message + Environment.NewLine + exc.StackTrace);
+                    throw;
+                }
 
                 InvokeGUIThread(() =>
                                 {
@@ -338,7 +351,16 @@ namespace SipClient.View
             Task.Factory.StartNew(() =>
                                   {
                                       // Disable echo
-                                      Softphone.GetMediaHandler.EchoCancellation(this.call, Settings.isEchoOff);
+                                      try
+                                      {
+                                          Softphone.GetMediaHandler.EchoCancellation(this.call, Settings.isEchoOff);
+                                      }
+                                      catch (Exception exc)
+                                      {
+                                          Debug.WriteLine(exc.Message + Environment.NewLine + exc.StackTrace);
+                                          throw;
+                                      }
+                                     
 
                                       InvokeGUIThread(() =>
                                       {
@@ -854,6 +876,53 @@ namespace SipClient.View
 
         private double volumeSliderValue = 0;
 
+        #region Notify
+
+        private string _selectedItem;
+
+        private ObservableCollection<string> _items = new ObservableCollection<string>();
+
+        public IEnumerable Items
+        {
+            get { return _items; }
+        }
+
+        public string SelectedItem
+        {
+            get { return _selectedItem; }
+            set
+            {
+                _selectedItem = value;
+                OnPropertyChanged("SelectedItem");
+            }
+        }
+
+        public string NewItem
+        {
+            set
+            {
+                if (SelectedItem != null)
+                {
+                    return;
+                }
+                if (!string.IsNullOrEmpty(value))
+                {
+                    _items.Add(value);
+                    SelectedItem = value;
+                }
+            }
+        }
+
+        protected void OnPropertyChanged(string propertyName)
+        {
+            this.PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        }
+
+        public event PropertyChangedEventHandler PropertyChanged;
+
+        #endregion
+
+
         private void ChangeIcons()
         {
             if (!SpeakerOff)
@@ -1126,6 +1195,19 @@ namespace SipClient.View
                 InitializeWcfClient();
 
                 this.ProcessID = Process.GetCurrentProcess().Id;
+
+                // get previous call list
+                var list = CallList.GetLastPhoneNumbersWithIcon;
+                if(list != null)
+                {
+                    InvokeGUIThread(() =>
+                    {
+                        list.ForEach((item) =>
+                        {
+                            _items.Add(item);
+                        });
+                    });                   
+                }               
             });
         }
 

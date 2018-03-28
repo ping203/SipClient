@@ -3,8 +3,7 @@
                       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                       xmlns:Controls="http://metro.mahapps.com/winfx/xaml/controls"
                       Title="Настройки"
-                      Height="220" 
-                      Width="470"
+                      SizeToContent="WidthAndHeight"
                       Loaded="MetroWindow_Loaded">
     <StackPanel Orientation="Vertical">
         <TabControl TabStripPlacement="Left" FontSize="13">

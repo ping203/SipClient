@@ -17,7 +17,10 @@ namespace SipClient.View
     public partial class Settings : MetroWindow
     {
         public static bool isEchoOff { get; private set; }
-        public static string PathToConfigs = string.Concat(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), Properties.Resources.SettingsFileName);
+        public static string PathToConfigs = 
+        	string.Concat(
+        		Environment.GetFolderPath(Environment.SpecialFolder.CommonProgramFiles),
+        		Properties.Resources.SettingsFileName);
 
         public static string Account { get; private set; }
         public static int Port { get; private set; }

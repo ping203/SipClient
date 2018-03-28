@@ -148,12 +148,22 @@
             <StackPanel Orientation="Horizontal"
                         Height="40" 
                         Margin="2">
-                <TextBox Name="txtPhoneNumber"
+                <ComboBox Name="txtPhoneNumber"
+                          FontSize="18"
+                          Width="190"
+                          IsEditable="True"
+                          ItemsSource="{Binding Items}"
+                          SelectedItem="{Binding SelectedItem}"
+                          Text="{Binding NewItem, UpdateSourceTrigger=LostFocus}"
+                          Controls:TextBoxHelper.Watermark="Введите номер"
+                          Controls:TextBoxHelper.ClearTextButton="True"/>
+                <!--<TextBox Name="txtPhoneNumber"
                          TextAlignment="Left"
                          FontSize="18"
                          Width="170"
                          Controls:TextBoxHelper.Watermark="Введите номер"
-                         Controls:TextBoxHelper.ClearTextButton="True"/>
+                         Controls:TextBoxHelper.ClearTextButton="True">
+            	</TextBox>-->
                 <Button x:Name="btnConnectOrReject"
                         MinWidth="60"
                         Click="btnConnectOrReject_Click"

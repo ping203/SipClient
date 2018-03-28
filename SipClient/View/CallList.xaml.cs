@@ -48,11 +48,11 @@ namespace SipClient.View
             this.dgvCalls.ItemsSource = ProcessTable(tab);
         }
 
-        public List<LastPhones> GetLastPhoneNumbersWithIcon
+        public static List<string> GetLastPhoneNumbersWithIcon
         {
             get
             {
-                List<LastPhones> answer = null;
+                List<string> answer = null;
                 var dt = new DataTable();
                 try
                 {
@@ -65,14 +65,16 @@ namespace SipClient.View
                 if (dt != null && dt.Rows.Count > 0)
                 {
                     answer = (from row in dt.AsEnumerable()
-                              select new LastPhones()
-                              {
-                                  phone = row["Phone"].ToString(),
-                                  bitmap = (Convert.ToInt32(row["isIncoming"]) == 1) ? Properties.Resources.inc_call
-                                            : (Convert.ToInt32(row["isOutcoming"]) == 1) ? Properties.Resources.out_call
-                                            : (Convert.ToInt32(row["isRejected"]) == 1) ? Properties.Resources.rej_call
-                                            : Properties.Resources.close
-                              }).ToList();
+                              select row["Phone"].ToString()).ToList();
+                    //answer = (from row in dt.AsEnumerable()
+                    //          select new LastPhones()
+                    //          {
+                    //              phone = row["Phone"].ToString(),
+                    //              bitmap = (Convert.ToInt32(row["isIncoming"]) == 1) ? Properties.Resources.inc_call
+                    //                        : (Convert.ToInt32(row["isOutcoming"]) == 1) ? Properties.Resources.out_call
+                    //                        : (Convert.ToInt32(row["isRejected"]) == 1) ? Properties.Resources.rej_call
+                    //                        : Properties.Resources.close
+                    //          }).ToList();
                 }
                 return answer;
             }

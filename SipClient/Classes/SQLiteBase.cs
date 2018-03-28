@@ -12,8 +12,10 @@ namespace SipClient.Classes
     class SQLiteBase
     {
         private static int MAX_RECORDS = 25;
-        private static string _CONN_STR_TO_SQLITE_DB = string.Concat("Data Source=", 
-            Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), Properties.Resources.CallerDataBaseFileName);
+        private static string _CONN_STR_TO_SQLITE_DB = 
+        	string.Concat("Data Source=",
+            Environment.GetFolderPath(Environment.SpecialFolder.CommonProgramFiles),
+            Properties.Resources.CallerDataBaseFileName);
 
         /// <summary>
         /// Add record to dataase
