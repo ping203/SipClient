@@ -1,8 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 2012
-# SharpDevelop 5.1
-VisualStudioVersion = 12.0.20827.3
+# Blend for Visual Studio 14
+VisualStudioVersion = 14.0.25420.1
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SipClient", "SipClient\SipClient.csproj", "{47ED430C-B861-4D1A-A9A4-C1F4F713CFDC}"
 EndProject
@@ -34,10 +33,10 @@ Global
 		{47ED430C-B861-4D1A-A9A4-C1F4F713CFDC}.Release|x86.ActiveCfg = Release|x86
 		{47ED430C-B861-4D1A-A9A4-C1F4F713CFDC}.Release|x86.Build.0 = Release|x86
 	EndGlobalSection
-	GlobalSection(TestCaseManagementSettings) = postSolution
-		CategoryFile = SipClient.vsmdi
-	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(TestCaseManagementSettings) = postSolution
+		CategoryFile = SipClient.vsmdi
 	EndGlobalSection
 EndGlobal

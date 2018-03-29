@@ -119,10 +119,7 @@ namespace SipClient.View
                           {
                               id = ++id,
                               phone = row["Phone"].ToString(),
-                              bitmap = (Convert.ToInt32(row["isIncoming"]) == 1) ? Properties.Resources.inc_call
-                                        : (Convert.ToInt32(row["isOutcoming"]) == 1) ? Properties.Resources.out_call
-                                        : (Convert.ToInt32(row["isRejected"]) == 1) ? Properties.Resources.rej_call
-                                        : Properties.Resources.close
+                              bitmap = (Convert.ToInt32(row["isIncoming"]) == 1) ? Properties.Resources.inc_call : Properties.Resources.out_call
                               ,
                               callStart = getCallTime(row, "TimeStart"),
                               callEnd = getCallTime(row, "TimeEnd"),

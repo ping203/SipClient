@@ -15,19 +15,22 @@ using System.Windows.Interop;
 using System.ComponentModel;
 using System.Collections.ObjectModel;
 using System.Collections;
+using System.Data;
+using System.Collections.Generic;
+using System.Globalization;
+using System.Windows.Threading;
+using SipClient.Classes;
 
 namespace SipClient.View
 {
     /// <summary>
     /// Interaction logic for MainWindow.xaml
     /// </summary>
-    public partial class MainWindow : MetroWindow, INotifyPropertyChanged
+    public partial class MainWindow : MetroWindow
     {
         public static Phone Softphone { get; private set; }
         private Account account;
         private Call call;
-
-        public int ProcessID { get; set; }
 
         public static WcfConnectionService.ServiceClient WcfClient;
 
@@ -86,15 +89,21 @@ namespace SipClient.View
         /// </summary>
         Func<string, bool> isTransferNumber = (s) => Regex.Match(s, @"^(#){1}").Success;
 
+        private Classes.ViewModel viewModel
+            = new Classes.ViewModel();
+
         public MainWindow()
         {
             // Initialize all controls
             InitializeComponent();
 
-            this.DataContext = this;
+            this.DataContext = viewModel;
 
             //Load configs
             View.Settings.LoadSettings(View.Settings.PathToConfigs);
+
+            // Set up current Culture info
+            Culture = new System.Globalization.CultureInfo("ru-RU");
 
             this.SpeakerOff = false;
             this.MicrophoneOff = false;
@@ -112,7 +121,7 @@ namespace SipClient.View
             }
             catch (Exception e)
             {
-                MessageBox.Show(e.Message + Environment.NewLine + e.StackTrace);
+                Trace.WriteLine(e.Message + Environment.NewLine + e.StackTrace);
             }
         }
 
@@ -163,12 +172,12 @@ namespace SipClient.View
                 // Set Fields
                 InvokeGUIThread(() =>
                                 {
-                                    this.txtAccount.Text = (Settings.Account != "") ? Settings.Account : Settings.Login;
+                                    this.txtAccount.Text = Settings.Account;
                                 });
             }
             catch (Exception ex)
             {
-                InvokeGUIThread(() => { MessageBox.Show(ex.Message + Environment.NewLine + ex.StackTrace); });
+                InvokeGUIThread(() => { MessageBox.Show(@"Не удается создать объект {SoftPhone}"); });
             }
         }
 
@@ -180,8 +189,9 @@ namespace SipClient.View
             InvokeGUIThread(() =>
                             {
                                 //set unavailable icon and text message
-                                this.StatusIcon.Source = ImageSourceFromBitmap(Properties.Resources.inactive);
-                                txtConnectionStatus.Text = "Нет подключения!";
+                                StatusIcon.SetResourceReference(System.Windows.Controls.Image.SourceProperty, "user_not_connected");
+                                //this.StatusIcon.Source = ImageSourceFromBitmap(Properties.Resources.presenceNotAvailable);
+                                txtStatus.Text = "Нет подключения!";
                             });
         }
 
@@ -190,9 +200,11 @@ namespace SipClient.View
             InvokeGUIThread(() =>
                             {
                                 //set available icon and text message
-                                this.PhoneIcon.Source = ImageSourceFromBitmap(Properties.Resources.telephone);
-                                this.StatusIcon.Source = ImageSourceFromBitmap(Properties.Resources.active);
-                                txtConnectionStatus.Text = "Подключен!";
+                                PhoneIcon.SetResourceReference(System.Windows.Controls.Image.SourceProperty, "answer");
+                                //this.PhoneIcon.Source = ImageSourceFromBitmap(Properties.Resources.answeraudio);
+                                StatusIcon.SetResourceReference(System.Windows.Controls.Image.SourceProperty, "user_connected");
+                                //this.StatusIcon.Source = ImageSourceFromBitmap(Properties.Resources.presenceAvailable);
+                                txtStatus.Text = "Подключен!";
                             });
         }
 
@@ -202,16 +214,9 @@ namespace SipClient.View
             if (isIncoming)
             {
                 // write to database
-                try
-                {
-                    RecordToLocalDataBase.isIncoming = true;
-                    RecordToLocalDataBase.TimeEnd = DateTime.Now;
-                    Classes.SQLiteBase.AddRecordToDataBase(RecordToLocalDataBase);
-                }
-                catch (Exception e)
-                {
-                    MessageBox.Show(e.Message + Environment.NewLine + e.StackTrace);
-                }
+                RecordToLocalDataBase.isIncoming = true;
+                RecordToLocalDataBase.TimeEnd = DateTime.Now;
+                Classes.SQLiteBase.AddRecordToDataBase(RecordToLocalDataBase);
                 // drop down Incoming call form
                 InvokeGUIThread(() =>
                                 {
@@ -223,21 +228,18 @@ namespace SipClient.View
                                         dialog.Close();
                                         dialog = null;
                                     }
+
+                                    // add badge value to history button
+                                    int value = string.IsNullOrEmpty(viewModel.BadgeValue) ? 0 : Convert.ToInt32(viewModel.BadgeValue);
+                                    viewModel.BadgeValue = (++value).ToString();
                                 });
             }
             else if (isOutcoming) // outcoming call
             {
                 // write to database
-                try
-                {
-                    RecordToLocalDataBase.isOutcoming = true;
-                    RecordToLocalDataBase.TimeEnd = DateTime.Now;
-                    Classes.SQLiteBase.AddRecordToDataBase(RecordToLocalDataBase);
-                }
-                catch (Exception e)
-                {
-                    MessageBox.Show(e.Message + Environment.NewLine + e.StackTrace);
-                }
+                RecordToLocalDataBase.isOutcoming = true;
+                RecordToLocalDataBase.TimeEnd = DateTime.Now;
+                Classes.SQLiteBase.AddRecordToDataBase(RecordToLocalDataBase);
             }
             else // rejected or another type
             {
@@ -253,14 +255,18 @@ namespace SipClient.View
             InvokeGUIThread(() =>
                             {
                                 // Update icons and text
-                                txtCallStatus.Text = "Закончен";
-                                this.PhoneIcon.Source = ImageSourceFromBitmap(Properties.Resources.telephone);
+                                txtStatus.Text = "Закончен";
+                                PhoneIcon.SetResourceReference(System.Windows.Controls.Image.SourceProperty, "answer");
+                                //this.PhoneIcon.Source = ImageSourceFromBitmap(Properties.Resources.answeraudio);
 
                                 // Disable Timer clockdown
                                 //TimerDisable();
                             });
 
             Classes.LocalAudioPlayer.PlaySound(Properties.Resources.notification_call_ended);
+
+            //Stop timer
+            StopTimer();
         }
 
         // Звонок принят или исходящий
@@ -268,23 +274,13 @@ namespace SipClient.View
         {
             if (isIncoming)
             {
-                //Task.Factory.StartNew(() =>
-                //                      {
                 // sound notification off
                 Classes.LocalAudioPlayer.StopSound();
 
                 // write incoming call to base
-                try
-                {
-                    RecordToLocalDataBase.Phone = GetPhone(this.call.GetFrom());
-                    RecordToLocalDataBase.TimeStart = DateTime.Now;
-                    RecordToLocalDataBase.isRejected = false;
-                }
-                catch (Exception e)
-                {
-                    MessageBox.Show(e.Message + Environment.NewLine + e.StackTrace);
-                }
-                //});
+                RecordToLocalDataBase.Phone = GetPhone(this.call.GetFrom());
+                RecordToLocalDataBase.TimeStart = DateTime.Now;
+                RecordToLocalDataBase.isRejected = false;
             }
             else
             {
@@ -293,25 +289,21 @@ namespace SipClient.View
                 isOutcoming = true;
 
                 // Disable echo
-                try
-                {
-                    Softphone.GetMediaHandler.EchoCancellation(this.call, Settings.isEchoOff);
-                }
-                catch (Exception exc)
-                {
-                    Debug.WriteLine(exc.Message + Environment.NewLine + exc.StackTrace);
-                    throw;
-                }
+                //Softphone.GetMediaHandler.EchoCancellation(this.call, Settings.isEchoOff);
 
                 InvokeGUIThread(() =>
                                 {
-                                    this.txtCallStatus.Text = "Исходящий";
-                                    this.PhoneIcon.Source = ImageSourceFromBitmap(Properties.Resources.call_end);
+                                    this.txtStatus.Text = "Исходящий";
+                                    PhoneIcon.SetResourceReference(System.Windows.Controls.Image.SourceProperty, "decline");
+                                    //this.PhoneIcon.Source = ImageSourceFromBitmap(Properties.Resources.decline);
 
                                     // set new call volume
 #warning SetSpeakerSoundDidntWork
                                     //var volValue = this.volumeSlider.Value;
                                     //softphone.GetMediaHandler.SetSpeakerSound(this.call, (float)(volValue % 100));
+
+                                    //Start timer
+                                    StartTimer();
                                 });
 
                 RecordToLocalDataBase.Phone = GetPhone(this.call.GetTo());
@@ -329,16 +321,9 @@ namespace SipClient.View
                 Softphone.TerminateCall(incomingCall);
 
                 // write rejected call to base
-                try
-                {
-                    RecordToLocalDataBase.Phone = GetPhone(incomingCall.GetFrom());
-                    RecordToLocalDataBase.TimeStart = DateTime.Now;
-                    RecordToLocalDataBase.isRejected = true;
-                }
-                catch (Exception e)
-                {
-                    MessageBox.Show(e.Message + Environment.NewLine + e.StackTrace);
-                }
+                RecordToLocalDataBase.Phone = GetPhone(incomingCall.GetFrom());
+                RecordToLocalDataBase.TimeStart = DateTime.Now;
+                RecordToLocalDataBase.isRejected = true;
 
                 return;
             };
@@ -348,49 +333,38 @@ namespace SipClient.View
             // Recieve incoming call
             this.call = incomingCall;
 
-            Task.Factory.StartNew(() =>
-                                  {
-                                      // Disable echo
-                                      try
-                                      {
-                                          Softphone.GetMediaHandler.EchoCancellation(this.call, Settings.isEchoOff);
-                                      }
-                                      catch (Exception exc)
-                                      {
-                                          Debug.WriteLine(exc.Message + Environment.NewLine + exc.StackTrace);
-                                          throw;
-                                      }
-                                     
+            string phone = GetPhone(this.call.GetFrom());
+            string callId = GetCallId(this.call.GetFrom());
 
-                                      InvokeGUIThread(() =>
-                                      {
-                                          // change icon to incoming call
-                                          this.txtCallStatus.Text = "Входящий";
-                                          this.PhoneIcon.Source = ImageSourceFromBitmap(Properties.Resources.call_end);
+            InvokeGUIThread(() =>
+            {
+                dialog = new IncomingDialog();
+                // show incoming call dialog      
+                dialog.Call = this.call;
+                dialog.SoftPhone = Softphone;
+                dialog.UpdateTextPanel(phone, callId);
 
-                                          // show incoming call dialog
-                                          dialog = new IncomingDialog();
-                                          dialog.Call = this.call;
-                                          dialog.SoftPhone = Softphone;
-                                          dialog.UpdateTextPanel(GetPhone(this.call.GetFrom()),
-                                              GetCallId(this.call.GetFrom()));
+                dialog.Show();
 
-                                          dialog.Show();
-                                          // Do incoming call panel animation
-                                          //AnimationBegin(0.5, brdIncomingCall_Height_Prop_Default, this.brdIncomingCall);
-                                      });
+                // change icon to incoming call
+                this.txtStatus.Text = "Входящий";
+                //this.PhoneIcon.Source = ImageSourceFromBitmap(Properties.Resources.decline);
+                PhoneIcon.SetResourceReference(System.Windows.Controls.Image.SourceProperty, "decline");
 
+                //Start timer
+                StartTimer();
+            });
 
-                                      RecordToLocalDataBase.Phone = GetPhone(incomingCall.GetFrom());
-                                      RecordToLocalDataBase.TimeStart = DateTime.Now;
-                                      RecordToLocalDataBase.isRejected = true;
+            // Play Sound
+            Classes.LocalAudioPlayer.PlaySound(Properties.Resources.signal, true);
 
-                                      // Play Sound
-                                      Classes.LocalAudioPlayer.PlaySound(Properties.Resources.signal, true);
+            // record call info
+            RecordToLocalDataBase.Phone = phone;
+            RecordToLocalDataBase.TimeStart = DateTime.Now;
+            RecordToLocalDataBase.isRejected = true;
 
-                                      // Get information about caller
-                                      GetInfoAboutCaller(this.call.GetFrom());
-                                  });
+            // Get information about caller
+            GetInfoAboutCaller(call.GetFrom());
         }
 
         /// <summary>
@@ -403,29 +377,31 @@ namespace SipClient.View
             string phone = GetPhone(CallGettFrom);
 
             // use wcf connection
-            try
-            {
-                if (this.call != null)
-                {
-                    var clientInfo = WcfClient.GetClinetInformation(phone);
+            //try
+            //{
+            //    if (this.call != null)
+            //    {
+            //        var clientInfo = WcfClient.GetClinetInformation(phone);
 
-                    InvokeGUIThread(() =>
-                                    {
-                                        SetCallerInfoPanelAttributes(clientInfo.Phone, clientInfo.Name, clientInfo.Address);
+            //        InvokeGUIThread(() =>
+            //                        {
+            //                            SetCallerInfoPanelAttributes(clientInfo.Phone, clientInfo.Name, clientInfo.Address);
 
-                                        if (dialog != null)
-                                            dialog.UpdateTextPanel(clientInfo.Phone, clientInfo.Name);
-                                    });
-                }
-            }
-            catch (Exception e)
-            {
-                //Debug.WriteLine(e.Message + Environment.NewLine + e.StackTrace);
-                Debug.WriteLine(@"WCF соединение не удалось, используем подключение к MySQL бд:
-                                    phone : " + phone);
+            //                            if (dialog != null)
+            //                                dialog.UpdateTextPanel(clientInfo.Phone, clientInfo.Name);
+            //                        });
+            //    }
+            //}
+            //catch (Exception e)
+            //{
+            //    //Debug.WriteLine(e.Message + Environment.NewLine + e.StackTrace);
+            //    Trace.WriteLine(@"WCF соединение не удалось, используем подключение к MySQL бд:
+            //                        phone : " + phone);
 
-                tryToUseMySQL = true;
-            }
+            //    tryToUseMySQL = true;
+            //}
+
+            tryToUseMySQL = true;
 
             // Use Mysql connection
             if (tryToUseMySQL && this.call != null)
@@ -509,13 +485,13 @@ namespace SipClient.View
                 case Phone.Error.CallError:
                     InvokeGUIThread(() =>
                                     {
-                                        txtCallStatus.Text = "Ошибка вызова!";
+                                        txtStatus.Text = "Ошибка вызова!";
                                     });
                     break;
                 case Phone.Error.LineIsBusyError:
                     InvokeGUIThread(() =>
                                     {
-                                        txtCallStatus.Text = "Линия занята!";
+                                        txtStatus.Text = "Линия занята!";
                                     });
                     break;
                 case Phone.Error.OrderError:
@@ -528,8 +504,9 @@ namespace SipClient.View
                         InvokeGUIThread(() =>
                                         {
                                             //set unavailable icon and text message
-                                            this.StatusIcon.Source = ImageSourceFromBitmap(Properties.Resources.inactive);
-                                            txtConnectionStatus.Text = "Нет подключения!";
+                                            //this.StatusIcon.Source = ImageSourceFromBitmap(Properties.Resources.presenceNotAvailable);
+                                            StatusIcon.SetResourceReference(System.Windows.Controls.Image.SourceProperty, "user_not_connected");
+                                            txtStatus.Text = "Нет подключения!";
                                         });
                     }
                     break;
@@ -537,7 +514,7 @@ namespace SipClient.View
                     {
                         InvokeGUIThread(() =>
                                         {
-                                            txtCallStatus.Text = "Неизвестная ошибка!";
+                                            txtStatus.Text = "Неизвестная ошибка!";
                                         });
                     }
                     break;
@@ -806,20 +783,20 @@ namespace SipClient.View
 
             InvokeGUIThread(() =>
                             {
-                                txtCallStatus.Text = "Трансфер на :" + transferNumber;
+                                txtStatus.Text = "Трансфер на :" + transferNumber;
                             });
 
             Classes.LocalAudioPlayer.PlaySound(Properties.Resources.notification_translate);
         }
 
-        public static ImageSource ImageSourceFromBitmap(Bitmap bitmap)
-        {
-            return Imaging.CreateBitmapSourceFromHBitmap(
-                bitmap.GetHbitmap(),
-                IntPtr.Zero,
-                Int32Rect.Empty,
-                BitmapSizeOptions.FromEmptyOptions());
-        }
+        //public static ImageSource ImageSourceFromBitmap(Bitmap bitmap)
+        //{
+        //    return Imaging.CreateBitmapSourceFromHBitmap(
+        //        bitmap.GetHbitmap(),
+        //        IntPtr.Zero,
+        //        Int32Rect.Empty,
+        //        BitmapSizeOptions.FromEmptyOptions());
+        //}
 
         private void buttonKeyPadButton_Click(object sender, RoutedEventArgs e)
         {
@@ -833,8 +810,9 @@ namespace SipClient.View
             {
                 InvokeGUIThread(() =>
                                 {
-                                    txtCallStatus.Text = "Трансфер на..";
-                                    this.PhoneIcon.Source = ImageSourceFromBitmap(Properties.Resources.telephone);
+                                    txtStatus.Text = "Трансфер на..";
+                                    //this.PhoneIcon.Source = ImageSourceFromBitmap(Properties.Resources.answeraudio);
+                                    PhoneIcon.SetResourceReference(System.Windows.Controls.Image.SourceProperty, "answer");
                                 });
             }
 
@@ -857,12 +835,30 @@ namespace SipClient.View
         public bool SpeakerOff { get; set; }
         public bool MicrophoneOff { get; set; }
 
+#warning VolumeDidntOff
+        private double volumeSliderValue = 0;
+
         private void btnVolumeOffOn(object sender, RoutedEventArgs e)
         {
             SpeakerOff = !SpeakerOff;
-#warning VolumeDidntOff
-            //VideoPlayerController.AudioManager.SetApplicationMute(this.ProcessID, SpeakerOff);
-            ChangeIcons();
+
+            if (!SpeakerOff)
+            {
+                InvokeGUIThread(() =>
+                {
+                    SpeakerIcon.SetResourceReference(System.Windows.Controls.Image.SourceProperty, "speaker_on");
+                    volumeSlider.Value = volumeSliderValue;
+                });
+            }
+            else
+            {
+                InvokeGUIThread(() =>
+                {
+                    volumeSliderValue = volumeSlider.Value;
+                    SpeakerIcon.SetResourceReference(System.Windows.Controls.Image.SourceProperty, "speaker_off");
+                    volumeSlider.Value = 0;
+                });
+            }
         }
 
         private void btnMicOffOn(object sender, RoutedEventArgs e)
@@ -871,160 +867,21 @@ namespace SipClient.View
 
             Softphone.GetMediaHandler.MicrophoneEnable(!MicrophoneOff);
 
-            ChangeIcons();
-        }
-
-        private double volumeSliderValue = 0;
-
-        #region Notify
-
-        private string _selectedItem;
-
-        private ObservableCollection<string> _items = new ObservableCollection<string>();
-
-        public IEnumerable Items
-        {
-            get { return _items; }
-        }
-
-        public string SelectedItem
-        {
-            get { return _selectedItem; }
-            set
-            {
-                _selectedItem = value;
-                OnPropertyChanged("SelectedItem");
-            }
-        }
-
-        public string NewItem
-        {
-            set
-            {
-                if (SelectedItem != null)
-                {
-                    return;
-                }
-                if (!string.IsNullOrEmpty(value))
-                {
-                    _items.Add(value);
-                    SelectedItem = value;
-                }
-            }
-        }
-
-        protected void OnPropertyChanged(string propertyName)
-        {
-            this.PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
-        }
-
-        public event PropertyChangedEventHandler PropertyChanged;
-
-        #endregion
-
-
-        private void ChangeIcons()
-        {
-            if (!SpeakerOff)
-            {
-                InvokeGUIThread(() =>
-                                {
-                                    this.SpeakerIcon.Source = ImageSourceFromBitmap(Properties.Resources.speaker_on_64x64);
-                                    this.volumeSlider.Value = volumeSliderValue;
-                                });
-            }
-            else
-            {
-                InvokeGUIThread(() =>
-                                {
-                                    volumeSliderValue = this.volumeSlider.Value;
-                                    this.SpeakerIcon.Source = ImageSourceFromBitmap(Properties.Resources.speaker_off_64x64);
-                                    this.volumeSlider.Value = 0;
-                                });
-            }
-
             if (!MicrophoneOff)
             {
-                InvokeGUIThread(() => { this.MicIcon.Source = ImageSourceFromBitmap(Properties.Resources.mic_on); });
+                InvokeGUIThread(() =>
+                {
+                    MicIcon.SetResourceReference(System.Windows.Controls.Image.SourceProperty, "mic_on");
+                });
             }
             else
             {
-                InvokeGUIThread(() => { this.MicIcon.Source = ImageSourceFromBitmap(Properties.Resources.mic_off); });
+                InvokeGUIThread(() =>
+                {
+                    MicIcon.SetResourceReference(System.Windows.Controls.Image.SourceProperty, "mic_off");
+                });
             }
         }
-
-        //private DispatcherTimer timer;
-        //private TimeSpan timeSpan;
-
-
-        //private void AnimationTimerGrow()
-        //{
-        //    //lblTime.Content = "00:00:00";
-
-        //    //DoubleAnimation animation = new DoubleAnimation();
-        //    //animation.From = lblTime.ActualHeight;
-        //    //animation.To = 30;
-        //    //animation.SpeedRatio = 2;
-        //    //animation.Duration = TimeSpan.FromSeconds(1);
-        //    //lblTime.BeginAnimation(Label.HeightProperty, animation);
-        //}
-
-        //private void AnimationTimerDecrease()
-        //{
-        //    //DoubleAnimation animation = new DoubleAnimation();
-        //    //animation.From = lblTime.ActualHeight;
-        //    //animation.To = 0;
-        //    //animation.SpeedRatio = 2;
-        //    //animation.Duration = TimeSpan.FromSeconds(1);
-        //    //lblTime.BeginAnimation(Label.HeightProperty, animation);
-        //}
-
-        //internal void StartTimer()
-        //{
-        //    if (timer == null)
-        //        timer = new DispatcherTimer();
-
-        //    timeSpan = new TimeSpan();
-        //    timer.Interval = new TimeSpan(0, 0, 0, 0, 0010);
-        //    timer.Tick += ((sender, e) =>
-        //                   {
-        //                       InvokeGUIThread(() =>
-        //                                       {
-        //                                           timeSpan += timer.Interval;
-        //                                           //lblTime.Content = timeSpan.ToString(@"mm\:ss");
-        //                                       });
-        //                   });
-        //    timer.Start();
-        //}
-
-        //internal void StopTimer()
-        //{
-        //    if (timer == null)
-        //        return;
-
-        //    timer.Stop();
-        //}
-
-        //internal void TimerEnable()
-        //{
-        //    // load animation
-        //    AnimationTimerGrow();
-        //    // run timer
-        //    StartTimer();
-        //}
-
-        //internal void TimerDisable()
-        //{
-        //    StopTimer();
-        //    DispatcherTimer animTimer = new DispatcherTimer();
-        //    animTimer.Interval = new TimeSpan(0, 0, 2);
-        //    animTimer.Tick += (sender, e) =>
-        //    {
-        //        AnimationTimerDecrease();
-        //        animTimer.Stop();
-        //    };
-        //    animTimer.Start();
-        //}
 
         // Event hendlers for incoming call
         #region IncomingCallEvents
@@ -1171,6 +1028,8 @@ namespace SipClient.View
 
         public bool isOutcoming { get; set; }
 
+        public CultureInfo Culture { get; private set; }
+
         private void MetroWindow_Closing(object sender, System.ComponentModel.CancelEventArgs e)
         {
             // hold on call
@@ -1194,20 +1053,12 @@ namespace SipClient.View
                 // Create Client connection
                 InitializeWcfClient();
 
-                this.ProcessID = Process.GetCurrentProcess().Id;
-
-                // get previous call list
-                var list = CallList.GetLastPhoneNumbersWithIcon;
-                if(list != null)
+                // Load table history
+                var source = LoadCallHistory();
+                InvokeGUIThread(() =>
                 {
-                    InvokeGUIThread(() =>
-                    {
-                        list.ForEach((item) =>
-                        {
-                            _items.Add(item);
-                        });
-                    });                   
-                }               
+                    dgvCallHistory.ItemsSource = source;
+                });
             });
         }
 
@@ -1224,14 +1075,106 @@ namespace SipClient.View
             }
         }
 
-        private void btnShowStatus_Click(object sender, RoutedEventArgs e)
+        private void btnShowNumpad_Click(object sender, RoutedEventArgs e)
         {
-            InvokeGUIThread(() =>
+
+            this.panelCallHistory.Visibility = Visibility.Collapsed;
+            this.gridNumpad.Visibility = Visibility.Visible;
+        }
+
+        private void btnCalls_Click(object sender, RoutedEventArgs e)
+        {
+            this.gridNumpad.Visibility = Visibility.Collapsed;
+            this.panelCallHistory.Visibility = Visibility.Visible;
+        }
+
+        private void dgvCallHistory_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            CallHistoryCell item = dgvCallHistory.SelectedItem as CallHistoryCell;
+            // show short info window
+            if (item != null)
             {
-                View.CallList userStat = View.CallList.GetInstance;
-                userStat.ReloadTable();
-                userStat.Show();
-            });
+#warning CallToChoosedNumber
+            }
+        }
+
+        private void txtSearchHistory_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            string text = txtSearchHistory.Text;
+            if (String.IsNullOrEmpty(text))
+            {
+                var source = LoadCallHistory();
+                InvokeGUIThread(() => { dgvCallHistory.ItemsSource = source; });
+            }
+            else
+            {
+                var source = (dgvCallHistory.ItemsSource as List<CallHistoryCell>);
+                if (source.Count == 0)
+                    source = LoadCallHistory();
+                var finded = source.AsEnumerable()
+                    .Where(item => item.phone.StartsWith(text)).ToList();
+                InvokeGUIThread(() => { dgvCallHistory.ItemsSource = finded; });
+            }
+        }
+
+        private List<CallHistoryCell> LoadCallHistory()
+        {
+            DataTable tab = Classes.SQLiteBase.GetDataTable("select * from calls");
+            return ProcessTable(tab);
+        }
+
+        private List<CallHistoryCell> ProcessTable(DataTable tab)
+        {
+            if (tab == null || tab.Rows.Count == 0)
+            {
+                return new List<CallHistoryCell>();
+            }
+
+            // processing parallel
+            return (from row in tab.AsEnumerable().AsParallel()
+                    select new CallHistoryCell()
+                    {
+                        phone = row["Phone"].ToString()
+                        ,
+                        bitmap = (Convert.ToInt32(row["isIncoming"]) == 1) ? Properties.Resources.inc_call : Properties.Resources.out_call
+                        ,
+                        time = Convert.ToDateTime(row["TimeStart"], Culture)
+                    }).ToList();
+        }
+
+        private DispatcherTimer timer;
+        private TimeSpan timeSpan;
+
+        internal void StartTimer()
+        {
+            if (timer == null)
+                timer = new DispatcherTimer();
+
+            timeSpan = new TimeSpan();
+            timer.Interval = new TimeSpan(0, 0, 1);
+            timer.Tick += ((sender, e) =>
+                           {
+                               InvokeGUIThread(() =>
+                                               {
+                                                   timeSpan += timer.Interval;
+                                                   lblTimer.Content = timeSpan.ToString(@"hh\:mm\:ss", Culture);
+                                               });
+                           });
+            timer.Start();
+        }
+
+        internal void StopTimer()
+        {
+            if (timer == null)
+                return;
+
+            timer.Stop();
+        }
+
+        private void dgvCallHistory_MenuCallToClick(object sender, RoutedEventArgs e)
+        {
+            CallHistoryCell item = dgvCallHistory.SelectedItem as CallHistoryCell;
+            txtPhoneNumber.Text = item.phone;
         }
     }
 }

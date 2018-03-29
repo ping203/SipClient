@@ -2,13 +2,19 @@
                       xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                       xmlns:Controls="http://metro.mahapps.com/winfx/xaml/controls"
+                      Topmost="True"
                       SizeToContent="WidthAndHeight"
                       Loaded="MetroWindow_Loaded"   
                       Closing="MetroWindow_Closing"
                       ShowInTaskbar="False">
+    <Controls:MetroWindow.Resources>
+        <BitmapImage UriSource="pack://application:,,,/Resources/Images/profile.png" x:Key="profile"/>
+        <BitmapImage UriSource="pack://application:,,,/Resources/Images/answeraudio.png" x:Key="answer"/>
+        <BitmapImage UriSource="pack://application:,,,/Resources/Images/decline.png" x:Key="decline"/>
+    </Controls:MetroWindow.Resources>
         <DockPanel>
         <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Height="70" Margin="5">
-            <Image Width="80" Source="/SipClient;component/Resources/Images/profile.png" Margin="10,0"/>
+            <Image Width="80" Source="{StaticResource profile}" Margin="10,0"/>
             <StackPanel Orientation="Vertical" Width="200">
                 <Label Name="lblPhone" FontSize="18" Content="Телефон"/>
                 <Label Name="lblName" FontSize="18" Content="Имя"/>
@@ -17,20 +23,32 @@
 
         <DockPanel DockPanel.Dock="Bottom" Height="45">
             <Button DockPanel.Dock="Left" 
+                    Click="btnAppend"
+                    BorderBrush="Black"
+                    BorderThickness="1"
                     Width="160" 
-                    Background="Lime" 
-                    BorderBrush="Black" 
-                    Style="{StaticResource {x:Static ToolBar.ButtonStyleKey}}" 
-                    Click="btnAppend" >
-                <Image Source="/SipClient;component/Resources/Images/telephone.png"/>
+                    Background="Green"
+                    Style="{DynamicResource SquareButtonStyle}">
+                <Image Source="{StaticResource answer}"/>
+                <!--<Rectangle Fill="{Binding RelativeSource={RelativeSource AncestorType=Button}, Path=Foreground}">
+                    <Rectangle.OpacityMask>
+                        <VisualBrush Stretch="Fill" Visual="{StaticResource answer}"/>
+                    </Rectangle.OpacityMask>
+                </Rectangle>-->
             </Button>
             <Button DockPanel.Dock="Right"
                     Width="160" 
                     Background="Red" 
-                    BorderBrush="Black" 
-                    Style="{StaticResource {x:Static ToolBar.ButtonStyleKey}}" 
+                    BorderBrush="Black"
+                    BorderThickness="1"
+                    Style="{DynamicResource SquareButtonStyle}"
                     Click="btnClose">
-                <Image Source="/SipClient;component/Resources/Images/call-end.png"/>
+                <Image Source="{StaticResource decline}"/>
+                <!--<Rectangle Fill="{Binding RelativeSource={RelativeSource AncestorType=Button}, Path=Foreground}">
+                    <Rectangle.OpacityMask>
+                        <VisualBrush Stretch="Fill" Visual="{StaticResource answer}"/>
+                    </Rectangle.OpacityMask>
+                </Rectangle>-->
             </Button>
         </DockPanel >
     </DockPanel>

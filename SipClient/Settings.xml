@@ -1,8 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Settings>
-  <Default>
-    <Host Ip="192.168.0.5"></Host>
-    <Login>test</Login>
-    <Password>testpass</Password>
-  </Default>
+  <Connection Ip="192.168.0.5" Port="5060" Login="test" Password="testpass" Account="Test">
+  </Connection>
+  <EchoCancellation Value="True" />
 </Settings>

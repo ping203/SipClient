@@ -28,8 +28,15 @@ namespace SipClient
 
          private void Application_Startup(object sender, StartupEventArgs e)
          {
-             View.MainWindow window = new View.MainWindow();
-             window.Show();
+            try
+            {
+                View.MainWindow window = new View.MainWindow();
+                window.Show();
+            }
+            catch (Exception exc)
+            {
+                MessageBox.Show(exc.Message + Environment.NewLine + exc.StackTrace);
+            }            
          }
     }
 }

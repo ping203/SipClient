@@ -19,7 +19,7 @@ namespace SipClient.View
         public static bool isEchoOff { get; private set; }
         public static string PathToConfigs = 
         	string.Concat(
-        		Environment.GetFolderPath(Environment.SpecialFolder.CommonProgramFiles),
+        		Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
         		Properties.Resources.SettingsFileName);
 
         public static string Account { get; private set; }
@@ -58,6 +58,7 @@ namespace SipClient.View
             string login = txtLogin.Text;
             string password = txtPassword.Password;
             string port = txtPort.Text;
+            Account = (txtAccountName.Text == "") ? login : txtAccountName.Text;
 
             try
             {

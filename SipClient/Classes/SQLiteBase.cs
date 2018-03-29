@@ -1,11 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Data.SqlClient;
-using System.Data.SQLite;
-using System.Data.Common;
 using System.Data;
+using System.Data.SQLite;
 
 namespace SipClient.Classes
 {
@@ -14,7 +9,7 @@ namespace SipClient.Classes
         private static int MAX_RECORDS = 25;
         private static string _CONN_STR_TO_SQLITE_DB = 
         	string.Concat("Data Source=",
-            Environment.GetFolderPath(Environment.SpecialFolder.CommonProgramFiles),
+            Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
             Properties.Resources.CallerDataBaseFileName);
 
         /// <summary>
