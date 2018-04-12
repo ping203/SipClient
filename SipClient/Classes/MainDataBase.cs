@@ -15,7 +15,11 @@ namespace SipClient.Classes
             DataTable dt = new DataTable();
             try
             {
+#pragma warning disable CS0103 // The name 'Properties' does not exist in the current context
+#pragma warning disable CS0103 // The name 'Properties' does not exist in the current context
                 using (MySqlConnection conn = new MySqlConnection(Properties.Resources.ConnectionStringCentralDB))
+#pragma warning restore CS0103 // The name 'Properties' does not exist in the current context
+#pragma warning restore CS0103 // The name 'Properties' does not exist in the current context
                 {
                     conn.Open();
 

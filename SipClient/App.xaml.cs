@@ -15,10 +15,9 @@ namespace SipClient
     {
         public App()
         {
-            this.DispatcherUnhandledException += new DispatcherUnhandledExceptionEventHandler(App_DispatcherUnhandledException);
         }
 
-         void App_DispatcherUnhandledException(object sender, DispatcherUnhandledExceptionEventArgs e)
+        void App_DispatcherUnhandledException(object sender, DispatcherUnhandledExceptionEventArgs e)
         {
             // Process unhandled exception
             MessageBox.Show(e.Exception.Message + Environment.NewLine + e.Exception.StackTrace);
@@ -26,8 +25,8 @@ namespace SipClient
             e.Handled = true;
         }
 
-         private void Application_Startup(object sender, StartupEventArgs e)
-         {
+        private void Application_Startup(object sender, StartupEventArgs e)
+        {
             try
             {
                 View.MainWindow window = new View.MainWindow();
@@ -36,7 +35,9 @@ namespace SipClient
             catch (Exception exc)
             {
                 MessageBox.Show(exc.Message + Environment.NewLine + exc.StackTrace);
-            }            
-         }
+
+                App.Current.Shutdown();
+            }
+        }
     }
 }

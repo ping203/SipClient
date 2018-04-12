@@ -6,13 +6,14 @@
                       SizeToContent="WidthAndHeight"
                       Loaded="MetroWindow_Loaded"   
                       Closing="MetroWindow_Closing"
+                      ResizeMode="NoResize"
                       ShowInTaskbar="False">
     <Controls:MetroWindow.Resources>
         <BitmapImage UriSource="pack://application:,,,/Resources/Images/profile.png" x:Key="profile"/>
         <BitmapImage UriSource="pack://application:,,,/Resources/Images/answeraudio.png" x:Key="answer"/>
         <BitmapImage UriSource="pack://application:,,,/Resources/Images/decline.png" x:Key="decline"/>
     </Controls:MetroWindow.Resources>
-        <DockPanel>
+    <DockPanel>
         <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Height="70" Margin="5">
             <Image Width="80" Source="{StaticResource profile}" Margin="10,0"/>
             <StackPanel Orientation="Vertical" Width="200">
@@ -23,7 +24,7 @@
 
         <DockPanel DockPanel.Dock="Bottom" Height="45">
             <Button DockPanel.Dock="Left" 
-                    Click="btnAppend"
+                    Click="btnAppend_Click"
                     BorderBrush="Black"
                     BorderThickness="1"
                     Width="160" 
@@ -42,7 +43,7 @@
                     BorderBrush="Black"
                     BorderThickness="1"
                     Style="{DynamicResource SquareButtonStyle}"
-                    Click="btnClose">
+                    Click="btnClose_Click">
                 <Image Source="{StaticResource decline}"/>
                 <!--<Rectangle Fill="{Binding RelativeSource={RelativeSource AncestorType=Button}, Path=Foreground}">
                     <Rectangle.OpacityMask>

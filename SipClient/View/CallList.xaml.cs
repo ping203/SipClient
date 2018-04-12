@@ -119,7 +119,15 @@ namespace SipClient.View
                           {
                               id = ++id,
                               phone = row["Phone"].ToString(),
+#pragma warning disable CS0103 // The name 'Properties' does not exist in the current context
+#pragma warning disable CS0103 // The name 'Properties' does not exist in the current context
+#pragma warning disable CS0103 // The name 'Properties' does not exist in the current context
+#pragma warning disable CS0103 // The name 'Properties' does not exist in the current context
                               bitmap = (Convert.ToInt32(row["isIncoming"]) == 1) ? Properties.Resources.inc_call : Properties.Resources.out_call
+#pragma warning restore CS0103 // The name 'Properties' does not exist in the current context
+#pragma warning restore CS0103 // The name 'Properties' does not exist in the current context
+#pragma warning restore CS0103 // The name 'Properties' does not exist in the current context
+#pragma warning restore CS0103 // The name 'Properties' does not exist in the current context
                               ,
                               callStart = getCallTime(row, "TimeStart"),
                               callEnd = getCallTime(row, "TimeEnd"),

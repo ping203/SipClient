@@ -10,7 +10,8 @@ namespace SipClient.Classes
 {
     public class LocalAudioPlayer
     {
-        public static Dictionary<string, System.IO.UnmanagedMemoryStream> DTFMS_DICTONARY = new Dictionary<string, System.IO.UnmanagedMemoryStream>()
+        public static Dictionary<string, System.IO.UnmanagedMemoryStream> DTFMS_DICTONARY
+            = new Dictionary<string, System.IO.UnmanagedMemoryStream>()
         {
             { "0", Properties.Resources.dtmf_0 },
             { "1", Properties.Resources.dtmf_1 },

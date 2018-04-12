@@ -17,10 +17,10 @@ namespace SipClient.View
     public partial class Settings : MetroWindow
     {
         public static bool isEchoOff { get; private set; }
-        public static string PathToConfigs = 
-        	string.Concat(
-        		Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-        		Properties.Resources.SettingsFileName);
+        public static string PathToConfigs =
+            string.Concat(
+                Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+                Properties.Resources.SettingsFileName);
 
         public static string Account { get; private set; }
         public static int Port { get; private set; }
@@ -43,9 +43,16 @@ namespace SipClient.View
 
         private void btnAppend_Click(object sender, RoutedEventArgs e)
         {
+            //echo cancellation
             bool? echo = this.tswEchoCancellation.IsChecked;
             if (echo != null)
                 isEchoOff = (bool)echo;
+
+            //set record-playback devices
+            if (choosedPlaybackDevice != null)
+                MainWindow.Softphone.PlaybackDevice = choosedPlaybackDevice;
+            if (choosedCaptureDevice != null)
+                MainWindow.Softphone.CaptureDevice = choosedCaptureDevice;
 
             SaveSettings(PathToConfigs);
             this.DialogResult = true;
@@ -138,27 +145,49 @@ namespace SipClient.View
 
             if (MainWindow.Softphone.CurrentConnectState == sipdotnet.Phone.ConnectState.Connected)
             {
-                string[] devList = MainWindow.Softphone.GetMediaHandler.GetAvailableSoundDevices;
-                playbackDevices.AddRange((from dev in devList
-                                          where isSpeaker(dev)
-                                          select dev));
+                playbackDevices.AddRange(MainWindow.Softphone?.PlaybackDevices());
+                recordDevices.AddRange(MainWindow.Softphone?.CaptureDevices());
 
-                recordDevices.AddRange(from dev in devList
-                                       where isMicrophone(dev)
-                                       select dev);
+                spltPlaybackDevices.ItemsSource = playbackDevices;
+                spltRecordDevices.ItemsSource = recordDevices;
+
+                spltPlaybackDevices.SelectedItem = MainWindow.Softphone.PlaybackDevice;
+                spltRecordDevices.SelectedItem = MainWindow.Softphone.CaptureDevice;
+
+                spltPlaybackDevices.SelectionChanged += new SelectionChangedEventHandler(spltDevices_SelectionChanged);
+                spltRecordDevices.SelectionChanged += new SelectionChangedEventHandler(spltDevices_SelectionChanged);
+
+                // echo cancellation                
             }
 
-            spltPlaybackDevices.ItemsSource = playbackDevices;
-            spltRecordDevices.ItemsSource = recordDevices;
-
-            spltPlaybackDevices.SelectionChanged += new SelectionChangedEventHandler(spltDevices_SelectionChanged);
-            spltRecordDevices.SelectionChanged += new SelectionChangedEventHandler(spltDevices_SelectionChanged);
+            // инфа
+            infoPanel.Text += $"PlaybackDevices List : {Environment.NewLine}{ string.Join(Environment.NewLine, MainWindow.Softphone.PlaybackDevices()) }{Environment.NewLine}{new string('-', 40)}{Environment.NewLine}";
+            infoPanel.Text += $"CaptureDevices List : {Environment.NewLine}{ string.Join(Environment.NewLine, MainWindow.Softphone.CaptureDevices()) }{Environment.NewLine}{new string('-', 40)}{Environment.NewLine}";
+            infoPanel.Text += $"PlaybackDevice : { MainWindow.Softphone.PlaybackDevice }{Environment.NewLine}";
+            infoPanel.Text += $"CaptureDevice : { MainWindow.Softphone.CaptureDevice }{Environment.NewLine}";
+            infoPanel.Text += $"RingerDevice : { MainWindow.Softphone.RingerDevice }{Environment.NewLine}";
+            infoPanel.Text += $"Микрофон доступен : { MainWindow.Softphone.MicrophoneEnabled }{Environment.NewLine}";
         }
+
+        private string choosedPlaybackDevice;
+        private string choosedCaptureDevice;
 
         void spltDevices_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             var splitButton = (sender as SplitButton);
-            // e.AddedItems[0] - выбранный элемент
+            var choosedItem = e.AddedItems[0].ToString();
+
+            if (choosedItem != null)
+            {
+                if (splitButton?.Name == "spltPlaybackDevices")
+                {
+                    choosedPlaybackDevice = choosedItem;
+                }
+                if (splitButton?.Name == "spltRecordDevices")
+                {
+                    choosedCaptureDevice = choosedItem;
+                }
+            }
         }
     }
 }

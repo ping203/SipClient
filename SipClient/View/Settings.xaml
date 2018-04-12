@@ -4,7 +4,9 @@
                       xmlns:Controls="http://metro.mahapps.com/winfx/xaml/controls"
                       Title="Настройки"
                       SizeToContent="WidthAndHeight"
-                      Loaded="MetroWindow_Loaded">
+                      ResizeMode="CanMinimize"
+                      Loaded="MetroWindow_Loaded"
+                       GlowBrush="{DynamicResource AccentColorBrush}">
     <StackPanel Orientation="Vertical">
         <TabControl TabStripPlacement="Left" FontSize="13">
             <TabItem Header="Соединение">
@@ -54,9 +56,12 @@
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition MinWidth="20" Width="Auto"/>
-                            <ColumnDefinition/>
+                            <ColumnDefinition Width="200"/>
                         </Grid.ColumnDefinitions>
                         <Grid.RowDefinitions>
+                            <RowDefinition/>
+                            <RowDefinition/>
+                            <RowDefinition/>
                             <RowDefinition/>
                             <RowDefinition/>
                             <RowDefinition/>
@@ -82,6 +87,15 @@
                                                Name="tswEchoCancellation"
                                                IsChecked="False"
                                                Header="Удаление эха"/>
+
+                        <StackPanel Grid.Row="3"
+                               Grid.ColumnSpan="2">
+                            <Label Content="Панель вывода информации"/>
+                            <TextBox Name="infoPanel"
+                                     IsReadOnly="True"
+                                     MinHeight="100"
+                                     MaxHeight="160"/>
+                        </StackPanel>
                     </Grid>
                 </TabItem.Content>
             </TabItem>

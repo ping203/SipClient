@@ -58,16 +58,17 @@ namespace SipClient.View
             BeginAnimation(OpacityProperty, animationBegin);
         }
 
-        private void btnAppend(object sender, RoutedEventArgs e)
+        private void btnAppend_Click(object sender, RoutedEventArgs e)
         {
             if (this.Call != null)
             {
-                SoftPhone.ReceiveOrResumeCall(this.Call);
+                //SoftPhone.ReceiveOrResumeCall(this.Call);
+                SoftPhone.ReceiveCall(this.Call);
             }
             this.Close();
         }
 
-        private void btnClose(object sender, RoutedEventArgs e)
+        private void btnClose_Click(object sender, RoutedEventArgs e)
         {
             if (this.Call != null)
             {
